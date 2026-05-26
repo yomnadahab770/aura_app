@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'mqtt_service.dart';
+import 'package:firebase_database/firebase_database.dart';
 
 class AlertsScreen extends StatefulWidget {
   const AlertsScreen({super.key});
@@ -9,52 +9,42 @@ class AlertsScreen extends StatefulWidget {
 }
 
 class _AlertsScreenState extends State<AlertsScreen> {
-  final List<Map<String, dynamic>> alerts = [
-    {
-      'type': 'Fire Detection',
-      'location': 'Kitchen',
-      'severity': 'High',
-      'time': '10:32 AM',
-      'icon': Icons.local_fire_department,
-      'color': Colors.redAccent,
-    },
-    {
-      'type': 'Gas Leakage',
-      'location': 'Basement',
-      'severity': 'Critical',
-      'time': '09:15 AM',
-      'icon': Icons.gas_meter_outlined,
-      'color': Colors.orangeAccent,
-    },
-  ];
+  final List<Map<String, dynamic>> alerts = [];
+  late DatabaseReference _alertsRef;
 
   @override
   void initState() {
     super.initState();
-    _connectMqtt();
+    _listenToFirebase();
   }
 
-  void _connectMqtt() {
-    final mqtt = MqttService();
-    mqtt.onAlertReceived = (data) {
+  void _listenToFirebase() {
+    _alertsRef = FirebaseDatabase.instance.ref('aura/alerts');
+    _alertsRef.onChildAdded.listen((event) {
+      final data = Map<String, dynamic>.from(event.snapshot.value as Map);
       final type = data['type'] ?? 'Unknown';
-      final time = data['timestamp'] ?? TimeOfDay.now().format(context);
+      final time = data['timestamp'] ?? '--:--';
       final dist = data['details']?['dist'] ?? 'N/A';
 
-      setState(() {
-        alerts.insert(0, {
-          'type': type == 'CLOSE_GAS' ? 'Child Near Stove' : 'Child Near Fire',
-          'location': 'Kitchen • ${dist}m away',
-          'severity': type == 'CLOSE_GAS' ? 'Critical' : 'High',
-          'time': time,
-          'icon': type == 'CLOSE_GAS'
-              ? Icons.gas_meter_outlined
-              : Icons.local_fire_department,
-          'color': type == 'CLOSE_GAS' ? Colors.orangeAccent : Colors.redAccent,
+      if (mounted) {
+        setState(() {
+          alerts.insert(0, {
+            'type': type == 'CLOSE_GAS'
+                ? 'Child Near Stove'
+                : 'Child Near Fire',
+            'location': 'Kitchen • ${dist}m away',
+            'severity': type == 'CLOSE_GAS' ? 'Critical' : 'High',
+            'time': time,
+            'icon': type == 'CLOSE_GAS'
+                ? Icons.gas_meter_outlined
+                : Icons.local_fire_department,
+            'color': type == 'CLOSE_GAS'
+                ? Colors.orangeAccent
+                : Colors.redAccent,
+          });
         });
-      });
-    };
-    mqtt.connect();
+      }
+    });
   }
 
   @override

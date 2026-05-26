@@ -43,3 +43,15 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# ==========================================
+# AURA Project Specific (Python & Firebase)
+# ==========================================
+# Ignore Firebase secret key (Service Account)
+aura-smart-home-*.json
+
+# Ignore large PyTorch model weights
+*.pt
+
+# Ignore video recordings
+*.mp4
