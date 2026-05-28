@@ -11,6 +11,7 @@ class AlertsScreen extends StatefulWidget {
 class _AlertsScreenState extends State<AlertsScreen> {
   final List<Map<String, dynamic>> alerts = [];
   late DatabaseReference _alertsRef;
+  final int _appStartTime = DateTime.now().millisecondsSinceEpoch;
 
   @override
   void initState() {
@@ -24,27 +25,112 @@ class _AlertsScreenState extends State<AlertsScreen> {
       final data = Map<String, dynamic>.from(event.snapshot.value as Map);
       final type = data['type'] ?? 'Unknown';
       final time = data['timestamp'] ?? '--:--';
-      final dist = data['details']?['dist'] ?? 'N/A';
+      final details = data['details'] != null
+          ? Map<String, dynamic>.from(data['details'] as Map)
+          : <String, dynamic>{};
+
+      // بعرض بس الـ alerts اللي جت بعد ما الـ app اتفتح
+      final serverTime = event.snapshot.key ?? '';
+      final pushTime = _getPushTimestamp(serverTime);
+      if (pushTime != null && pushTime < _appStartTime) return;
+
+      final alertInfo = _buildAlertInfo(type, details);
 
       if (mounted) {
         setState(() {
           alerts.insert(0, {
-            'type': type == 'CLOSE_GAS'
-                ? 'Child Near Stove'
-                : 'Child Near Fire',
-            'location': 'Kitchen • ${dist}m away',
-            'severity': type == 'CLOSE_GAS' ? 'Critical' : 'High',
+            'type': alertInfo['title'],
+            'location': alertInfo['subtitle'],
+            'severity': alertInfo['severity'],
             'time': time,
-            'icon': type == 'CLOSE_GAS'
-                ? Icons.gas_meter_outlined
-                : Icons.local_fire_department,
-            'color': type == 'CLOSE_GAS'
-                ? Colors.orangeAccent
-                : Colors.redAccent,
+            'icon': alertInfo['icon'],
+            'color': alertInfo['color'],
           });
         });
       }
     });
+  }
+
+  // Firebase push keys فيها timestamp مضمّن
+  int? _getPushTimestamp(String pushKey) {
+    try {
+      const chars =
+          '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_';
+      int timestamp = 0;
+      for (int i = 0; i < 8; i++) {
+        timestamp = timestamp * 64 + chars.indexOf(pushKey[i]);
+      }
+      return timestamp;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Map<String, dynamic> _buildAlertInfo(
+    String type,
+    Map<String, dynamic> details,
+  ) {
+    switch (type) {
+      // --- Fire Feature Alerts ---
+      case 'CLOSE_GAS':
+        return {
+          'title': 'Child Near Stove',
+          'subtitle': 'Kitchen • ${details['dist'] ?? 'N/A'}m away',
+          'severity': 'Critical',
+          'icon': Icons.gas_meter_outlined,
+          'color': Colors.orangeAccent,
+        };
+      case 'DISTRACT_CHILD':
+        return {
+          'title': 'Child Near Fire',
+          'subtitle': 'Kitchen • ${details['dist'] ?? 'N/A'}m away',
+          'severity': 'High',
+          'icon': Icons.local_fire_department,
+          'color': Colors.redAccent,
+        };
+
+      // --- Full Detection Alerts ---
+      case 'FALL_DETECTED':
+        final prob = details['probability'] ?? 0.0;
+        final pid = details['person_id'] ?? '';
+        return {
+          'title': 'Fall Detected',
+          'subtitle':
+              'Person $pid • Confidence ${(prob * 100).toStringAsFixed(0)}%',
+          'severity': 'Critical',
+          'icon': Icons.accessibility_new,
+          'color': Colors.redAccent,
+        };
+      case 'CHEST_CLUTCH':
+        final duration = details['duration_sec'] ?? 0;
+        final pid = details['person_id'] ?? '';
+        return {
+          'title': 'Hand on Chest',
+          'subtitle': 'Person $pid • ${duration}s detected',
+          'severity': 'High',
+          'icon': Icons.favorite_outlined,
+          'color': Colors.pinkAccent,
+        };
+      case 'PAIN_DETECTED':
+        final score = details['pain_score'] ?? 0.0;
+        final pid = details['person_id'] ?? '';
+        return {
+          'title': 'Pain Detected',
+          'subtitle': 'Person $pid • Score $score',
+          'severity': 'Medium',
+          'icon': Icons.sentiment_very_dissatisfied,
+          'color': Colors.deepOrangeAccent,
+        };
+
+      default:
+        return {
+          'title': 'Unknown Alert',
+          'subtitle': type,
+          'severity': 'Info',
+          'icon': Icons.warning_amber_outlined,
+          'color': Colors.grey,
+        };
+    }
   }
 
   @override
@@ -58,12 +144,31 @@ class _AlertsScreenState extends State<AlertsScreen> {
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         iconTheme: const IconThemeData(color: Colors.white),
+        actions: [
+          if (alerts.isNotEmpty)
+            IconButton(
+              icon: const Icon(Icons.delete_outline, color: Colors.white54),
+              onPressed: () => setState(() => alerts.clear()),
+              tooltip: 'Clear all',
+            ),
+        ],
       ),
       body: alerts.isEmpty
           ? const Center(
-              child: Text(
-                '✅ No Alerts',
-                style: TextStyle(color: Colors.white54, fontSize: 18),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.check_circle_outline,
+                    color: Colors.green,
+                    size: 60,
+                  ),
+                  SizedBox(height: 12),
+                  Text(
+                    'No Alerts',
+                    style: TextStyle(color: Colors.white54, fontSize: 18),
+                  ),
+                ],
               ),
             )
           : ListView.builder(
@@ -111,19 +216,22 @@ class _AlertsScreenState extends State<AlertsScreen> {
                             Row(
                               children: [
                                 const Icon(
-                                  Icons.location_on,
+                                  Icons.info_outline,
                                   color: Colors.white38,
                                   size: 14,
                                 ),
                                 const SizedBox(width: 4),
-                                Text(
-                                  alert['location'] as String,
-                                  style: const TextStyle(
-                                    color: Colors.white54,
-                                    fontSize: 13,
+                                Expanded(
+                                  child: Text(
+                                    alert['location'] as String,
+                                    style: const TextStyle(
+                                      color: Colors.white54,
+                                      fontSize: 13,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
-                                const SizedBox(width: 12),
+                                const SizedBox(width: 8),
                                 const Icon(
                                   Icons.access_time,
                                   color: Colors.white38,
@@ -142,6 +250,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
                           ],
                         ),
                       ),
+                      const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 10,

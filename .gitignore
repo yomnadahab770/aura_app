@@ -1,57 +1,17 @@
-# Miscellaneous
-*.class
-*.log
-*.pyc
-*.swp
-.DS_Store
-.atom/
-.build/
-.buildlog/
-.history
-.svn/
-.swiftpm/
-migrate_working_dir/
-
-# IntelliJ related
-*.iml
-*.ipr
-*.iws
-.idea/
-
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# is commented out by default.
-#.vscode/
-
-# Flutter/Dart/Pub related
-**/doc/api/
-**/ios/Flutter/.last_build_id
-.dart_tool/
-.flutter-plugins-dependencies
-.pub-cache/
-.pub/
-/build/
-/coverage/
-
-# Symbolication related
-app.*.symbols
-
-# Obfuscation related
-app.*.map.json
-
-# Android Studio will place build artifacts here
-/android/app/debug
-/android/app/profile
-/android/app/release
-
 # ==========================================
-# AURA Project Specific (Python & Firebase)
+# AURA Extra Safety (Models & Media)
 # ==========================================
-# Ignore Firebase secret key (Service Account)
-aura-smart-home-*.json
+# Ignore HDF5 models (Emotion model)
+*.hdf5
 
-# Ignore large PyTorch model weights
-*.pt
+# Ignore all video formats (VLC files in your folder)
+*.avi
+*.mov
+*.mkv
 
-# Ignore video recordings
-*.mp4
+# Ignore local environment folders (just in case)
+aura_env2/
+aura_env/
+
+# Ignore local alert images folder
+alerts/
