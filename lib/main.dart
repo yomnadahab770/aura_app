@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'firebase_options.dart';
 import 'dart:async';
 import 'alerts_screen.dart';
 
-String currentUserRole = "Admin";
-String currentUserName = "Basant";
-String currentUserEmail = "basant@aura.com";
+class UserSession {
+  static String role = 'Guest';
+  static String name = 'Guest';
+  static String email = '';
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -81,24 +84,19 @@ class _AuraAppState extends State<AuraApp> {
       home: SplashScreen(onThemeChanged: updateTheme),
       builder: (context, child) {
         final isDark = Theme.of(context).brightness == Brightness.dark;
-        return Scaffold(
-          backgroundColor: isDark
-              ? const Color(0xFF121212)
-              : const Color(0xFFE5E5E5),
-          body: Center(
-            child: Container(
-              constraints: const BoxConstraints(maxWidth: 430),
-              decoration: BoxDecoration(
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(isDark ? 0.6 : 0.1),
-                    blurRadius: 30,
-                    spreadRadius: 5,
-                  ),
-                ],
-              ),
-              child: child,
+        return Center(
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 430),
+            decoration: BoxDecoration(
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(isDark ? 0.6 : 0.1),
+                  blurRadius: 30,
+                  spreadRadius: 5,
+                ),
+              ],
             ),
+            child: child,
           ),
         );
       },
@@ -229,30 +227,68 @@ class _LoginScreenState extends State<LoginScreen> {
   void _handleLogin() {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
-      Timer(const Duration(seconds: 1), () {
-        setState(() => _isLoading = false);
-        String email = _emailController.text.trim();
-        String password = _passwordController.text.trim();
-        if (email == "basant@aura.com" && password == "123456") {
-          currentUserRole = "Admin";
-          currentUserName = "Basant";
-          currentUserEmail = "basant@aura.com";
-          _navigateToThemes();
-        } else if (email == "guest@aura.com" && password == "123456") {
-          currentUserRole = "Guest";
-          currentUserName = "Guest Room Controller";
-          currentUserEmail = "guest@aura.com";
-          _navigateToThemes();
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('❌ Invalid email or password!'),
-              backgroundColor: Colors.redAccent,
-            ),
-          );
-        }
-      });
+
+      final email = _emailController.text.trim();
+      final password = _passwordController.text.trim();
+
+      FirebaseDatabase.instance
+          .ref('aura/users')
+          .orderByChild('email')
+          .equalTo(email)
+          .once()
+          .then((event) {
+            if (!mounted) return;
+            setState(() => _isLoading = false);
+
+            if (event.snapshot.value == null) {
+              _showError();
+              return;
+            }
+
+            final raw = event.snapshot.value;
+            if (raw is! Map) {
+              _showError();
+              return;
+            }
+
+            final users = Map<String, dynamic>.from(raw);
+            Map<String, dynamic>? foundUser;
+
+            for (final entry in users.values) {
+              if (entry is! Map) continue;
+              final u = Map<String, dynamic>.from(entry);
+              if (u['password']?.toString() == password) {
+                foundUser = u;
+                break;
+              }
+            }
+
+            if (foundUser == null) {
+              _showError();
+              return;
+            }
+
+            UserSession.role = foundUser['role'] ?? 'Guest';
+            UserSession.name = foundUser['name'] ?? 'User';
+            UserSession.email = email;
+
+            _navigateToThemes();
+          })
+          .catchError((e) {
+            if (!mounted) return;
+            setState(() => _isLoading = false);
+            _showError();
+          });
     }
+  }
+
+  void _showError() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('❌ Invalid email or password!'),
+        backgroundColor: Colors.redAccent,
+      ),
+    );
   }
 
   void _navigateToThemes() {
@@ -321,22 +357,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 const SizedBox(height: 35),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: primaryColor.withOpacity(0.08),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Text(
-                    "💡 Hint:\n• Admin: basant@aura.com (Pass: 123456)\n• Guest: guest@aura.com (Pass: 123456)",
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey,
-                      height: 1.4,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 25),
+                // HINT REMOVED - was here
                 Text(
                   'Email Address',
                   style: TextStyle(
@@ -688,46 +709,55 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _index = 0;
+  late final List<Widget> _screens;
+  late final List<BottomNavigationBarItem> _navItems;
+
+  @override
+  void initState() {
+    super.initState();
+    _screens = [
+      const HomeDashboard(),
+      const AlertsScreen(),
+      const DevicesScreen(),
+      if (UserSession.role == "Admin") const DigitalTwinScreen(),
+      const SettingsScreen(),
+    ];
+    _navItems = [
+      const BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+      const BottomNavigationBarItem(
+        icon: Icon(Icons.notifications),
+        label: 'Alerts',
+      ),
+      const BottomNavigationBarItem(
+        icon: Icon(Icons.devices),
+        label: 'Devices',
+      ),
+      if (UserSession.role == "Admin")
+        const BottomNavigationBarItem(
+          icon: Icon(Icons.view_in_ar),
+          label: 'Twin',
+        ),
+      const BottomNavigationBarItem(
+        icon: Icon(Icons.settings),
+        label: 'Settings',
+      ),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final List<Widget> screens = [
-      const HomeDashboard(),
-      const AlertsScreen(),
-      const DevicesScreen(),
-      if (currentUserRole == "Admin") const DigitalTwinScreen(),
-      const SettingsScreen(),
-    ];
+    final safeIndex = _index.clamp(0, _screens.length - 1);
     return Scaffold(
-      body: screens[_index >= screens.length ? 0 : _index],
+      body: _screens[safeIndex],
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _index,
+        currentIndex: safeIndex,
         onTap: (i) => setState(() => _index = i),
         backgroundColor: isDark ? const Color(0xFF1F1F1F) : Colors.white,
         selectedItemColor: Theme.of(context).colorScheme.primary,
         unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
-        items: [
-          const BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.notifications),
-            label: 'Alerts',
-          ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.devices),
-            label: 'Devices',
-          ),
-          if (currentUserRole == "Admin")
-            const BottomNavigationBarItem(
-              icon: Icon(Icons.view_in_ar),
-              label: 'Twin',
-            ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: 'Settings',
-          ),
-        ],
+        items: _navItems,
       ),
     );
   }
@@ -749,6 +779,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
   void initState() {
     super.initState();
     timer = Timer.periodic(const Duration(seconds: 4), (_) {
+      if (!mounted) return;
       setState(() {
         temperature = 23 + (DateTime.now().second % 6).toDouble();
         motionDetected = DateTime.now().second % 5 == 0;
@@ -804,9 +835,9 @@ class _HomeDashboardState extends State<HomeDashboard> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              currentUserRole == "Admin"
-                  ? 'Good Morning, Basant 👋'
-                  : 'Welcome Guest User 👋',
+              UserSession.role == "Admin"
+                  ? 'Good Morning, ${UserSession.name} 👋'
+                  : 'Welcome ${UserSession.name} 👋',
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
@@ -995,7 +1026,7 @@ class SettingsScreen extends StatelessWidget {
                     radius: 32,
                     backgroundColor: primaryColor.withOpacity(0.2),
                     child: Icon(
-                      currentUserRole == "Admin"
+                      UserSession.role == "Admin"
                           ? Icons.admin_panel_settings
                           : Icons.person_outline,
                       size: 36,
@@ -1008,7 +1039,7 @@ class SettingsScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          currentUserName,
+                          UserSession.name,
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -1016,7 +1047,7 @@ class SettingsScreen extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          currentUserEmail,
+                          UserSession.email,
                           style: const TextStyle(
                             fontSize: 13,
                             color: Colors.grey,
@@ -1033,7 +1064,7 @@ class SettingsScreen extends StatelessWidget {
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
-                            currentUserRole,
+                            UserSession.role,
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.bold,
@@ -1127,11 +1158,11 @@ class SettingsScreen extends StatelessWidget {
               'Change password and tokens',
               isDark,
             ),
-            if (currentUserRole == "Admin") ...[
+            if (UserSession.role == "Admin") ...[
               _settingsTile(
                 Icons.people_outline,
                 'Manage House Members',
-                '3 users have access',
+                '5 users have access',
                 isDark,
               ),
               _settingsTile(
@@ -1161,9 +1192,15 @@ class SettingsScreen extends StatelessWidget {
                   ),
                 ),
                 onPressed: () {
+                  UserSession.role = 'Guest';
+                  UserSession.name = 'Guest';
+                  UserSession.email = '';
                   Navigator.pushAndRemoveUntil(
                     context,
-                    MaterialPageRoute(builder: (_) => const AuraApp()),
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          const LoginScreen(onThemeChanged: _dummyThemeChange),
+                    ),
                     (route) => false,
                   );
                 },
@@ -1174,6 +1211,8 @@ class SettingsScreen extends StatelessWidget {
       ),
     );
   }
+
+  static void _dummyThemeChange(ThemeMode mode, Color color) {}
 
   Widget _reportRow(
     String title,
