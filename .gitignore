@@ -1,17 +1,17 @@
-# ==========================================
-# AURA Extra Safety (Models & Media)
-# ==========================================
-# Ignore HDF5 models (Emotion model)
-*.hdf5
+# Firebase credentials (إجباري - أمان)
+*firebase-adminsdk*.json
 
-# Ignore all video formats (VLC files in your folder)
+# Videos & Images
 *.avi
-*.mov
-*.mkv
+*.jpg
+*.jpeg
+*.png
 
-# Ignore local environment folders (just in case)
-aura_env2/
+# Environments
 aura_env/
-
-# Ignore local alert images folder
+aura_env2/
 alerts/
+# Flutter / Dart
+.dart_tool/
+.idea/
+build/
