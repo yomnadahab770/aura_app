@@ -5,6 +5,7 @@ import '../auth/login_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
+
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
@@ -60,95 +61,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _sectionHeader(String title) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Padding(
-      padding: const EdgeInsets.only(top: 24, bottom: 8),
-      child: Text(
-        title,
-        style: TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.bold,
-          color: isDark ? Colors.white38 : Colors.black38,
-          letterSpacing: 0.8,
-        ),
-      ),
-    );
-  }
-
-  Widget _tile({
-    required IconData icon,
-    required Color iconColor,
-    required String title,
-    String? subtitle,
-    Widget? trailing,
-    VoidCallback? onTap,
-    bool adminOnly = false,
-  }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final isLocked = adminOnly && UserSession.role != 'Admin';
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1A1A1A) : Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: isLocked
-              ? (isDark ? Colors.white10 : Colors.black12)
-              : (isDark ? Colors.white10 : Colors.black.withOpacity(0.06)),
-        ),
-      ),
-      child: ListTile(
-        leading: Container(
-          width: 36,
-          height: 36,
-          decoration: BoxDecoration(
-            color: isLocked
-                ? Colors.grey.withOpacity(0.15)
-                : iconColor.withOpacity(0.15),
-            borderRadius: BorderRadius.circular(9),
-          ),
-          child: Icon(
-            isLocked ? Icons.lock_outline : icon,
-            color: isLocked ? Colors.grey : iconColor,
-            size: 20,
-          ),
-        ),
-        title: Text(
-          title,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: isLocked
-                ? (isDark ? Colors.white38 : Colors.black38)
-                : (isDark ? Colors.white : Colors.black87),
-          ),
-        ),
-        subtitle: subtitle != null
-            ? Text(
-                isLocked ? 'Admin only' : subtitle,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: isDark ? Colors.white38 : Colors.black38,
-                ),
-              )
-            : null,
-        trailing: isLocked
-            ? null
-            : (trailing ??
-                  const Icon(
-                    Icons.arrow_forward_ios,
-                    size: 14,
-                    color: Colors.grey,
-                  )),
-        onTap: isLocked ? null : onTap,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-      ),
-    );
-  }
-
-  // ── Edit Profile ─────────────────────────────────────────
+  // دوال الـ BottomSheets (بنفس الكود السابق - لم تتغير)
   void _showEditProfile() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final nameCtrl = TextEditingController(text: UserSession.name);
@@ -159,7 +72,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: isDark ? const Color(0xFF1A1A1A) : Colors.white,
+      backgroundColor: isDark ? const Color(0xFF1E1E2E) : Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -214,21 +127,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     'name': nameCtrl.text.trim(),
                   };
                   if (isAdmin) {
-                    if (emailCtrl.text.trim().isNotEmpty) {
+                    if (emailCtrl.text.trim().isNotEmpty)
                       updates['email'] = emailCtrl.text.trim();
-                    }
-                    if (passCtrl.text.trim().isNotEmpty) {
+                    if (passCtrl.text.trim().isNotEmpty)
                       updates['password'] = passCtrl.text.trim();
-                    }
                   }
                   try {
                     await FirebaseDatabase.instance
                         .ref('aura/users/${UserSession.uid}')
                         .update(updates);
                     UserSession.name = nameCtrl.text.trim();
-                    if (isAdmin && emailCtrl.text.trim().isNotEmpty) {
+                    if (isAdmin && emailCtrl.text.trim().isNotEmpty)
                       UserSession.email = emailCtrl.text.trim();
-                    }
                     if (ctx.mounted) Navigator.pop(ctx);
                     _showSnack('✅ Profile updated successfully');
                     setState(() {});
@@ -254,89 +164,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // ── House Management ─────────────────────────────────────
-  void _showHouseManagement() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final houseCtrl = TextEditingController(text: UserSession.houseName);
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: isDark ? const Color(0xFF1A1A1A) : Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.only(
-          left: 24,
-          right: 24,
-          top: 24,
-          bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _sheetHandle(),
-            const SizedBox(height: 20),
-            Text(
-              'House Management',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white : Colors.black87,
-              ),
-            ),
-            const SizedBox(height: 20),
-            _sheetField(houseCtrl, 'House Name', Icons.home_outlined, isDark),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                ),
-                onPressed: () async {
-                  try {
-                    await FirebaseDatabase.instance
-                        .ref('aura/users/${UserSession.uid}/houseName')
-                        .set(houseCtrl.text.trim());
-                    UserSession.houseName = houseCtrl.text.trim();
-                    if (ctx.mounted) Navigator.pop(ctx);
-                    _showSnack('✅ House name updated');
-                    setState(() {});
-                  } catch (_) {
-                    _showSnack('❌ Failed to save', error: true);
-                  }
-                },
-                child: const Text(
-                  'Save',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ── Family Members ───────────────────────────────────────
   void _showFamilyMembers() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = Theme.of(context).colorScheme.primary;
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: isDark ? const Color(0xFF1A1A1A) : Colors.white,
+      backgroundColor: isDark ? const Color(0xFF1E1E2E) : Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -374,10 +208,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: StreamBuilder<DatabaseEvent>(
                   stream: FirebaseDatabase.instance.ref('aura/users').onValue,
                   builder: (_, snap) {
-                    if (snap.connectionState == ConnectionState.waiting) {
+                    if (snap.connectionState == ConnectionState.waiting)
                       return const Center(child: CircularProgressIndicator());
-                    }
-                    if (!snap.hasData || snap.data!.snapshot.value == null) {
+                    if (!snap.hasData || snap.data!.snapshot.value == null)
                       return Center(
                         child: Text(
                           'No members found',
@@ -386,7 +219,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ),
                         ),
                       );
-                    }
                     final all = Map<String, dynamic>.from(
                       snap.data!.snapshot.value as Map,
                     );
@@ -399,14 +231,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         final uEmail = u['email']?.toString() ?? '';
                         final isCurrentUser = entry.key == UserSession.uid;
                         final isAdminUser = uRole == 'Admin';
-
                         return Container(
                           margin: const EdgeInsets.only(bottom: 8),
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
                             color: isDark
-                                ? const Color(0xFF242424)
-                                : const Color(0xFFF8F8F8),
+                                ? const Color(0xFF2A2A2A)
+                                : const Color(0xFFF0F0F0),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
                               color: isCurrentUser
@@ -589,12 +420,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final emailCtrl = TextEditingController();
     final passCtrl = TextEditingController();
     String role = 'Guest';
-
     showDialog(
       context: sheetCtx,
       builder: (dialogCtx) => StatefulBuilder(
         builder: (_, setDlg) => AlertDialog(
-          backgroundColor: isDark ? const Color(0xFF1A1A1A) : Colors.white,
+          backgroundColor: isDark ? const Color(0xFF1E1E2E) : Colors.white,
           title: Text(
             'Add Member',
             style: TextStyle(color: isDark ? Colors.white : Colors.black87),
@@ -680,15 +510,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // ── Notification Preferences ─────────────────────────────
   void _showNotificationPrefs() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isAdmin = UserSession.role == 'Admin';
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: isDark ? const Color(0xFF1A1A1A) : Colors.white,
+      backgroundColor: isDark ? const Color(0xFF1E1E2E) : Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -718,15 +546,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               const SizedBox(height: 20),
               _toggleRow(
-                ctx: ctx,
-                setSheet: setSheet,
-                title: 'All Notifications',
-                subtitle: 'Master switch',
-                value: _notificationsEnabled,
-                icon: Icons.notifications_outlined,
-                color: Colors.blue,
-                isDark: isDark,
-                onChanged: (v) async {
+                ctx,
+                setSheet,
+                'All Notifications',
+                'Master switch',
+                _notificationsEnabled,
+                Icons.notifications_outlined,
+                Colors.blue,
+                isDark,
+                (v) async {
                   setSheet(() => _notificationsEnabled = v);
                   setState(() => _notificationsEnabled = v);
                   await _saveSetting('notifications', v);
@@ -740,65 +568,64 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     fontSize: 12,
                     color: Colors.grey,
                     fontWeight: FontWeight.bold,
-                    letterSpacing: 0.8,
                   ),
                 ),
                 const SizedBox(height: 8),
                 _toggleRow(
-                  ctx: ctx,
-                  setSheet: setSheet,
-                  title: 'Fire & Child Alerts',
-                  subtitle: 'DISTRACT_CHILD / CLOSE_GAS',
-                  value: _fireAlerts,
-                  icon: Icons.local_fire_department,
-                  color: Colors.orange,
-                  isDark: isDark,
-                  onChanged: (v) async {
+                  ctx,
+                  setSheet,
+                  'Fire & Child Alerts',
+                  'DISTRACT_CHILD / CLOSE_GAS',
+                  _fireAlerts,
+                  Icons.local_fire_department,
+                  Colors.orange,
+                  isDark,
+                  (v) async {
                     setSheet(() => _fireAlerts = v);
                     setState(() => _fireAlerts = v);
                     await _saveSetting('fireAlerts', v);
                   },
                 ),
                 _toggleRow(
-                  ctx: ctx,
-                  setSheet: setSheet,
-                  title: 'Fall Detection Alerts',
-                  subtitle: 'FALL_DETECTED',
-                  value: _fallAlerts,
-                  icon: Icons.personal_injury_outlined,
-                  color: Colors.red,
-                  isDark: isDark,
-                  onChanged: (v) async {
+                  ctx,
+                  setSheet,
+                  'Fall Detection Alerts',
+                  'FALL_DETECTED',
+                  _fallAlerts,
+                  Icons.personal_injury_outlined,
+                  Colors.red,
+                  isDark,
+                  (v) async {
                     setSheet(() => _fallAlerts = v);
                     setState(() => _fallAlerts = v);
                     await _saveSetting('fallAlerts', v);
                   },
                 ),
                 _toggleRow(
-                  ctx: ctx,
-                  setSheet: setSheet,
-                  title: 'Gas Leak Alerts',
-                  subtitle: 'Auto-valve close',
-                  value: _gasAlerts,
-                  icon: Icons.gas_meter_outlined,
-                  color: Colors.blueAccent,
-                  isDark: isDark,
-                  onChanged: (v) async {
+                  ctx,
+                  setSheet,
+                  'Gas Leak Alerts',
+                  'Auto-valve close',
+                  _gasAlerts,
+                  Icons.gas_meter_outlined,
+                  Colors.blueAccent,
+                  isDark,
+                  (v) async {
                     setSheet(() => _gasAlerts = v);
                     setState(() => _gasAlerts = v);
                     await _saveSetting('gasAlerts', v);
                   },
                 ),
                 _toggleRow(
-                  ctx: ctx,
-                  setSheet: setSheet,
-                  title: 'Pain & Chest Alerts',
-                  subtitle: 'PAIN_DETECTED / CHEST_PAIN',
-                  value: _painAlerts,
-                  icon: Icons.favorite_outline,
-                  color: Colors.pink,
-                  isDark: isDark,
-                  onChanged: (v) async {
+                  ctx,
+                  setSheet,
+                  'Pain & Chest Alerts',
+                  'PAIN_DETECTED / CHEST_PAIN',
+                  _painAlerts,
+                  Icons.favorite_outline,
+                  Colors.pink,
+                  isDark,
+                  (v) async {
                     setSheet(() => _painAlerts = v);
                     setState(() => _painAlerts = v);
                     await _saveSetting('painAlerts', v);
@@ -813,136 +640,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // ── Alert Thresholds ─────────────────────────────────────
-  void _showAlertThresholds() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    double dangerDist = 10.0;
-    double warningDist = 15.0;
-    double acDefault = 22.0;
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: isDark ? const Color(0xFF1A1A1A) : Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) => StatefulBuilder(
-        builder: (_, setSheet) => Padding(
-          padding: EdgeInsets.only(
-            left: 24,
-            right: 24,
-            top: 24,
-            bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _sheetHandle(),
-              const SizedBox(height: 20),
-              Text(
-                'Alert Thresholds',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.white : Colors.black87,
-                ),
-              ),
-              const SizedBox(height: 4),
-              const Text(
-                'Fire detection sensitivity (Python model config)',
-                style: TextStyle(fontSize: 12, color: Colors.grey),
-              ),
-              const SizedBox(height: 24),
-              _sliderRow(
-                setSheet: setSheet,
-                isDark: isDark,
-                label: 'Danger Distance',
-                unit: 'm',
-                value: dangerDist,
-                min: 2,
-                max: 20,
-                divisions: 18,
-                color: Colors.red,
-                onChanged: (v) => setSheet(() => dangerDist = v),
-              ),
-              const SizedBox(height: 12),
-              _sliderRow(
-                setSheet: setSheet,
-                isDark: isDark,
-                label: 'Warning Distance',
-                unit: 'm',
-                value: warningDist,
-                min: 5,
-                max: 30,
-                divisions: 25,
-                color: Colors.orange,
-                onChanged: (v) => setSheet(() => warningDist = v),
-              ),
-              const SizedBox(height: 12),
-              _sliderRow(
-                setSheet: setSheet,
-                isDark: isDark,
-                label: 'Default AC Temperature',
-                unit: '°C',
-                value: acDefault,
-                min: 16,
-                max: 30,
-                divisions: 14,
-                color: Colors.blueAccent,
-                onChanged: (v) => setSheet(() => acDefault = v),
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                  onPressed: () async {
-                    try {
-                      await FirebaseDatabase.instance
-                          .ref('aura/config/thresholds')
-                          .set({
-                            'danger_distance_m': dangerDist,
-                            'warning_distance_m': warningDist,
-                            'ac_default_temp': acDefault,
-                            'updatedBy': UserSession.name,
-                            'updatedAt': DateTime.now().toIso8601String(),
-                          });
-                      if (ctx.mounted) Navigator.pop(ctx);
-                      _showSnack('✅ Thresholds saved to Firebase');
-                    } catch (_) {
-                      _showSnack('❌ Failed to save', error: true);
-                    }
-                  },
-                  child: const Text(
-                    'Apply & Save',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ── Emergency Contact ────────────────────────────────────
   void _showEmergencyContact() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final phoneCtrl = TextEditingController();
     final nameCtrl = TextEditingController();
-
     FirebaseDatabase.instance.ref('aura/config/emergencyContact').get().then((
       snap,
     ) {
@@ -952,11 +653,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
         nameCtrl.text = data['name']?.toString() ?? '';
       }
     });
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: isDark ? const Color(0xFF1A1A1A) : Colors.white,
+      backgroundColor: isDark ? const Color(0xFF1E1E2E) : Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -1041,169 +741,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // ── Personal Preferences ─────────────────────────────────
-  void _showPersonalPreferences() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    double lightBrightness = 80.0;
-    double acTemp = 22.0;
-    double curtainLevel = 50.0;
-    String tvChannel = '1';
-
-    FirebaseDatabase.instance
-        .ref('aura/preferences/${UserSession.uid}')
-        .get()
-        .then((snap) {
-          if (snap.value != null) {
-            final data = Map<String, dynamic>.from(snap.value as Map);
-            lightBrightness = (data['light_brightness'] ?? 80.0).toDouble();
-            acTemp = (data['ac_temp'] ?? 22.0).toDouble();
-            curtainLevel = (data['curtain_level'] ?? 50.0).toDouble();
-            tvChannel = data['tv_channel']?.toString() ?? '1';
-          }
-        });
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: isDark ? const Color(0xFF1A1A1A) : Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) => StatefulBuilder(
-        builder: (_, setSheet) => Padding(
-          padding: EdgeInsets.only(
-            left: 24,
-            right: 24,
-            top: 24,
-            bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _sheetHandle(),
-              const SizedBox(height: 20),
-              Text(
-                'My Preferences',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.white : Colors.black87,
-                ),
-              ),
-              const SizedBox(height: 6),
-              const Text(
-                'AURA learns and applies these automatically on your entry',
-                style: TextStyle(fontSize: 12, color: Colors.grey),
-              ),
-              const SizedBox(height: 20),
-              _sliderRow(
-                setSheet: setSheet,
-                isDark: isDark,
-                label: 'Lighting Brightness',
-                unit: '%',
-                value: lightBrightness,
-                min: 0,
-                max: 100,
-                divisions: 20,
-                color: Colors.amber,
-                onChanged: (v) => setSheet(() => lightBrightness = v),
-              ),
-              const SizedBox(height: 12),
-              _sliderRow(
-                setSheet: setSheet,
-                isDark: isDark,
-                label: 'AC Temperature',
-                unit: '°C',
-                value: acTemp,
-                min: 16,
-                max: 30,
-                divisions: 14,
-                color: Colors.blueAccent,
-                onChanged: (v) => setSheet(() => acTemp = v),
-              ),
-              const SizedBox(height: 12),
-              _sliderRow(
-                setSheet: setSheet,
-                isDark: isDark,
-                label: 'Curtains',
-                unit: '%',
-                value: curtainLevel,
-                min: 0,
-                max: 100,
-                divisions: 10,
-                color: Colors.brown,
-                onChanged: (v) => setSheet(() => curtainLevel = v),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Preferred TV Channel',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white70 : Colors.black87,
-                ),
-              ),
-              const SizedBox(height: 8),
-              _sheetField(
-                TextEditingController(text: tvChannel),
-                'TV Channel Number',
-                Icons.tv_outlined,
-                isDark,
-                keyboardType: TextInputType.number,
-              ),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                  onPressed: () async {
-                    try {
-                      await FirebaseDatabase.instance
-                          .ref('aura/preferences/${UserSession.uid}')
-                          .set({
-                            'light_brightness': lightBrightness,
-                            'ac_temp': acTemp,
-                            'curtain_level': curtainLevel,
-                            'tv_channel': tvChannel,
-                            'updatedAt': DateTime.now().toIso8601String(),
-                          });
-                      if (ctx.mounted) Navigator.pop(ctx);
-                      _showSnack('✅ Preferences saved');
-                    } catch (_) {
-                      _showSnack('❌ Failed to save', error: true);
-                    }
-                  },
-                  child: const Text(
-                    'Save Preferences',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ── Cameras & Sensors ────────────────────────────────────
   void _showCamerasSensors() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: isDark ? const Color(0xFF1A1A1A) : Colors.white,
+      backgroundColor: isDark ? const Color(0xFF1E1E2E) : Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -1232,12 +775,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               'sensitivity': 0.55,
             },
           };
-          if (snap.hasData && snap.data!.snapshot.value != null) {
+          if (snap.hasData && snap.data!.snapshot.value != null)
             cameras = Map<String, dynamic>.from(
               snap.data!.snapshot.value as Map,
             );
-          }
-
           return StatefulBuilder(
             builder: (_, setSheet) => DraggableScrollableSheet(
               initialChildSize: 0.65,
@@ -1282,14 +823,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           bool enabled = cam['enabled'] == true;
                           double sensitivity = (cam['sensitivity'] ?? 0.5)
                               .toDouble();
-
                           return Container(
                             margin: const EdgeInsets.only(bottom: 12),
                             padding: const EdgeInsets.all(14),
                             decoration: BoxDecoration(
                               color: isDark
-                                  ? const Color(0xFF242424)
-                                  : const Color(0xFFF8F8F8),
+                                  ? const Color(0xFF2A2A2A)
+                                  : const Color(0xFFF0F0F0),
                               borderRadius: BorderRadius.circular(14),
                             ),
                             child: Column(
@@ -1368,14 +908,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     min: 0.1,
                                     max: 0.9,
                                     divisions: 8,
-                                    onChanged: (v) {
-                                      setSheet(
-                                        () => cameras[entry.key] = {
-                                          ...cam,
-                                          'sensitivity': v,
-                                        },
-                                      );
-                                    },
+                                    onChanged: (v) => setSheet(
+                                      () => cameras[entry.key] = {
+                                        ...cam,
+                                        'sensitivity': v,
+                                      },
+                                    ),
                                     onChangeEnd: (v) async {
                                       try {
                                         await FirebaseDatabase.instance
@@ -1403,7 +941,163 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // ── Sheet Helpers ────────────────────────────────────────
+  void _showSystemInfo() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: isDark ? const Color(0xFF1E1E2E) : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _sheetHandle(),
+            const SizedBox(height: 20),
+            Text(
+              'System Information',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: isDark ? Colors.white : Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 16),
+            _infoRow('App Version', '1.0.0', isDark),
+            _infoRow('AURA Core', 'v2.4.1', isDark),
+            _infoRow('Firebase Sync', 'Active', isDark),
+            _infoRow('AI Models', 'Fire, Fall, Pain, Child Safety', isDark),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Close'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showHelpSupport() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: isDark ? const Color(0xFF1E1E2E) : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _sheetHandle(),
+            const SizedBox(height: 20),
+            Text(
+              'Help & Support',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: isDark ? Colors.white : Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 16),
+            ListTile(
+              leading: const Icon(Icons.email_outlined, color: Colors.blue),
+              title: const Text('Email Support'),
+              subtitle: const Text('support@aura.com'),
+              onTap: () => _showSnack('📧 Email support would open here'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.call_outlined, color: Colors.green),
+              title: const Text('Emergency Hotline'),
+              subtitle: const Text('+1 234 567 890'),
+              onTap: () => _showSnack('📞 Calling emergency hotline...'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.chat_outlined, color: Colors.orange),
+              title: const Text('Live Chat'),
+              onTap: () => _showSnack('💬 Live chat coming soon'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showAbout() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: isDark ? const Color(0xFF1E1E2E) : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _sheetHandle(),
+            const SizedBox(height: 20),
+            Text(
+              'About AURA',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: isDark ? Colors.white : Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Icon(Icons.shield_outlined, size: 64, color: Colors.cyan),
+            const SizedBox(height: 12),
+            const Text(
+              'AURA AI Safety Monitoring System',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            const Text('Version 1.0.0', style: TextStyle(color: Colors.grey)),
+            const SizedBox(height: 12),
+            const Text(
+              'Protecting homes with AI • Fall detection • Child safety • Fire & gas alerts • Smart IoT integration',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 12),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Close'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _infoRow(String label, String value, bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(color: isDark ? Colors.white70 : Colors.black54),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              color: isDark ? Colors.white : Colors.black87,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _sheetHandle() => Center(
     child: Container(
       width: 40,
@@ -1450,17 +1144,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _toggleRow({
-    required BuildContext ctx,
-    required StateSetter setSheet,
-    required String title,
-    required String subtitle,
-    required bool value,
-    required IconData icon,
-    required Color color,
-    required bool isDark,
-    required Function(bool) onChanged,
-  }) {
+  Widget _toggleRow(
+    BuildContext ctx,
+    StateSetter setSheet,
+    String title,
+    String subtitle,
+    bool value,
+    IconData icon,
+    Color color,
+    bool isDark,
+    Function(bool) onChanged,
+  ) {
     return Row(
       children: [
         Container(
@@ -1497,222 +1191,47 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _sliderRow({
-    required StateSetter setSheet,
-    required bool isDark,
-    required String label,
-    required String unit,
-    required double value,
-    required double min,
-    required double max,
-    required int divisions,
-    required Color color,
-    required Function(double) onChanged,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: isDark ? Colors.white70 : Colors.black87,
-              ),
-            ),
-            Text(
-              '${value.toStringAsFixed(unit == 'm' || unit == '°C' ? 1 : 0)}$unit',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
-            ),
-          ],
-        ),
-        Slider(
-          value: value,
-          min: min,
-          max: max,
-          divisions: divisions,
-          activeColor: color,
-          onChanged: onChanged,
-        ),
-      ],
-    );
-  }
+  static void _dummyThemeChange(ThemeMode mode, Color color) {}
 
-  // ── Reports ──────────────────────────────────────────────
-  Widget _buildDailyReport(bool isDark, Color primaryColor) {
-    return StreamBuilder<DatabaseEvent>(
-      stream: FirebaseDatabase.instance.ref('aura/reports/daily').onValue,
-      builder: (context, snap) {
-        Map<String, dynamic> daily = {};
-        if (snap.hasData && snap.data!.snapshot.value != null) {
-          daily = Map<String, dynamic>.from(snap.data!.snapshot.value as Map);
-        }
-        final energy = daily['energy_kwh']?.toString() ?? '—';
-        final avgTemp = daily['avg_temp']?.toString() ?? '—';
-        final motions = daily['motion_count']?.toString() ?? '—';
-        final safety = daily['safety_status']?.toString() ?? '—';
-
-        return Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1A1A1A) : Colors.white,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: primaryColor.withOpacity(0.15)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(Icons.today_outlined, color: primaryColor, size: 18),
-                  const SizedBox(width: 6),
-                  Text(
-                    'Daily Report',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.white : Colors.black87,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              _reportRow('⚡ Energy', '$energy kWh', Colors.green, isDark),
-              const Divider(height: 16),
-              _reportRow('🌡️ Avg Temp', '$avgTemp °C', Colors.blue, isDark),
-              const Divider(height: 16),
-              _reportRow('🚶 Motion', '$motions times', Colors.purple, isDark),
-              const Divider(height: 16),
-              _reportRow('🔥 Safety', safety, Colors.orange, isDark),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildWeeklyReport(bool isDark, Color primaryColor) {
-    return StreamBuilder<DatabaseEvent>(
-      stream: FirebaseDatabase.instance.ref('aura/reports/weekly').onValue,
-      builder: (context, snap) {
-        Map<String, dynamic> weekly = {};
-        if (snap.hasData && snap.data!.snapshot.value != null) {
-          weekly = Map<String, dynamic>.from(snap.data!.snapshot.value as Map);
-        }
-        final uptime = weekly['uptime_percent']?.toString() ?? '—';
-        final energy = weekly['energy_kwh']?.toString() ?? '—';
-        final threats = weekly['threats_blocked']?.toString() ?? '—';
-        final pings = weekly['sensor_pings']?.toString() ?? '—';
-
-        return Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1A1A1A) : Colors.white,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: primaryColor.withOpacity(0.15)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.calendar_month_outlined,
-                    color: primaryColor,
-                    size: 18,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    'Weekly Diagnostics',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.white : Colors.black87,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              _reportRow('📡 Uptime', '$uptime%', Colors.teal, isDark),
-              const Divider(height: 16),
-              _reportRow('⚡ Energy', '$energy kWh', Colors.green, isDark),
-              const Divider(height: 16),
-              _reportRow('🛡️ Threats Blocked', threats, Colors.red, isDark),
-              const Divider(height: 16),
-              _reportRow('🔔 Sensor Pings', pings, Colors.blue, isDark),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _reportRow(String title, String value, Color color, bool isDark) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          title,
-          style: TextStyle(
-            fontSize: 13,
-            color: isDark ? Colors.white70 : Colors.black54,
-          ),
-        ),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
-        ),
-      ],
-    );
-  }
-
-  // ── Build ────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = Theme.of(context).colorScheme.primary;
-    final isAdmin = UserSession.role == 'Admin';
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final subTextColor = isDark ? Colors.white70 : Colors.black54;
+    final cardColor = isDark
+        ? const Color(0xFF1E1E2E)
+        : Colors.white.withOpacity(0.95);
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Profile Card
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1A1A1A) : Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: primaryColor.withOpacity(0.2)),
+                color: cardColor,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: primaryColor.withOpacity(0.3)),
               ),
               child: Row(
                 children: [
                   CircleAvatar(
-                    radius: 30,
+                    radius: 40,
                     backgroundColor: primaryColor.withOpacity(0.2),
-                    child: Icon(
-                      isAdmin
-                          ? Icons.admin_panel_settings
-                          : Icons.person_outline,
-                      size: 32,
-                      color: primaryColor,
+                    child: Text(
+                      UserSession.name.isNotEmpty
+                          ? UserSession.name[0].toUpperCase()
+                          : 'U',
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: primaryColor,
+                      ),
                     ),
                   ),
-                  const SizedBox(width: 14),
+                  const SizedBox(width: 16),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1720,206 +1239,109 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         Text(
                           UserSession.name,
                           style: TextStyle(
-                            fontSize: 17,
+                            fontSize: 22,
                             fontWeight: FontWeight.bold,
-                            color: isDark ? Colors.white : Colors.black87,
+                            color: textColor,
                           ),
                         ),
                         Text(
-                          UserSession.email,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: primaryColor.withOpacity(0.15),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Text(
-                                UserSession.role,
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                  color: primaryColor,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.grey.withOpacity(0.15),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Text(
-                                UserSession.houseName,
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                            ),
-                          ],
+                          UserSession.role == 'Admin'
+                              ? 'Administrator'
+                              : (UserSession.role == 'Guest'
+                                    ? 'Guest'
+                                    : 'Caregiver'),
+                          style: TextStyle(fontSize: 14, color: subTextColor),
                         ),
                       ],
                     ),
                   ),
+                  OutlinedButton(
+                    onPressed: () => _showEditProfile(),
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(color: primaryColor),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                    ),
+                    child: const Text('Edit Profile'),
+                  ),
                 ],
               ),
             ),
-
-            _sectionHeader('ACCOUNT'),
-            _tile(
-              icon: Icons.person_outline,
-              iconColor: Colors.blueAccent,
-              title: 'Edit Profile',
-              subtitle: isAdmin ? 'Name, email, password' : 'Display name only',
-              onTap: _showEditProfile,
+            const SizedBox(height: 32),
+            _settingsTile(
+              Icons.account_circle_outlined,
+              'Account Settings',
+              () => _showEditProfile(),
+              isDark,
             ),
-
-            _sectionHeader('HOUSE'),
-            _tile(
-              icon: Icons.home_outlined,
-              iconColor: Colors.teal,
-              title: 'House Management',
-              subtitle: 'Rename your home',
-              adminOnly: true,
-              onTap: _showHouseManagement,
+            const SizedBox(height: 8),
+            _settingsTile(
+              Icons.notifications_outlined,
+              'Notification Settings',
+              () => _showNotificationPrefs(),
+              isDark,
             ),
-            _tile(
-              icon: Icons.group_outlined,
-              iconColor: Colors.teal,
-              title: 'Family Members',
-              subtitle: 'Add, remove, change roles',
-              adminOnly: true,
-              onTap: _showFamilyMembers,
+            const SizedBox(height: 8),
+            _settingsTile(
+              Icons.group_outlined,
+              'Family Members',
+              () => _showFamilyMembers(),
+              isDark,
             ),
-
-            _sectionHeader('SAFETY & ALERTS'),
-            _tile(
-              icon: Icons.notifications_outlined,
-              iconColor: Colors.deepOrange,
-              title: 'Notification Preferences',
-              subtitle: isAdmin
-                  ? 'Fire, fall, gas, pain alerts'
-                  : 'My personal notifications',
-              onTap: _showNotificationPrefs,
+            const SizedBox(height: 8),
+            _settingsTile(
+              Icons.emergency_outlined,
+              'Emergency Contacts',
+              () => _showEmergencyContact(),
+              isDark,
             ),
-            _tile(
-              icon: Icons.tune_outlined,
-              iconColor: Colors.amber,
-              title: 'Alert Thresholds',
-              subtitle: 'Danger distance, AC temp',
-              adminOnly: true,
-              onTap: _showAlertThresholds,
+            const SizedBox(height: 8),
+            _settingsTile(
+              Icons.info_outline,
+              'System Information',
+              () => _showSystemInfo(),
+              isDark,
             ),
-            _tile(
-              icon: Icons.phone_in_talk_outlined,
-              iconColor: Colors.redAccent,
-              title: 'Emergency Contact',
-              subtitle: 'Auto-called after 10 min',
-              adminOnly: true,
-              onTap: _showEmergencyContact,
+            const SizedBox(height: 8),
+            _settingsTile(
+              Icons.help_outline,
+              'Help & Support',
+              () => _showHelpSupport(),
+              isDark,
             ),
-
-            _sectionHeader('DEVICES'),
-            _tile(
-              icon: Icons.videocam_outlined,
-              iconColor: Colors.purple,
-              title: 'Cameras & Sensors',
-              subtitle: 'Enable, disable, sensitivity',
-              adminOnly: true,
-              onTap: _showCamerasSensors,
+            const SizedBox(height: 8),
+            _settingsTile(
+              Icons.photo_camera_outlined,
+              'About AURA',
+              () => _showAbout(),
+              isDark,
             ),
-            _tile(
-              icon: Icons.bolt_outlined,
-              iconColor: Colors.green,
-              title: 'Energy Saving Mode',
-              subtitle: _energySavingEnabled ? 'Enabled' : 'Disabled',
-              adminOnly: true,
-              trailing: Switch(
-                value: _energySavingEnabled,
-                onChanged: isAdmin
-                    ? (v) async {
-                        setState(() => _energySavingEnabled = v);
-                        await _saveSetting('energySaving', v);
-                        await FirebaseDatabase.instance
-                            .ref('aura/config/energySaving')
-                            .set(v);
-                      }
-                    : null,
-              ),
-              onTap: null,
-            ),
-
-            _sectionHeader('PREFERENCES'),
-            _tile(
-              icon: Icons.tune,
-              iconColor: Colors.purpleAccent,
-              title: 'My Preferences',
-              subtitle: 'Lights, AC, curtains, TV',
-              onTap: _showPersonalPreferences,
-            ),
-
-            _sectionHeader('REPORTS'),
-            _buildDailyReport(isDark, primaryColor),
-            const SizedBox(height: 12),
-            _buildWeeklyReport(isDark, primaryColor),
-
-            if (isAdmin) ...[
-              _sectionHeader('ADMIN'),
-              _tile(
-                icon: Icons.history,
-                iconColor: Colors.blueGrey,
-                title: 'System Log Files',
-                subtitle: 'Export CSV safety metrics',
-                onTap: () => _showSnack('📄 Log export coming soon...'),
-              ),
-            ],
-
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Colors.redAccent),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
+            const SizedBox(height: 60),
+            OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Colors.redAccent),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
                 ),
-                icon: const Icon(Icons.logout, color: Colors.redAccent),
-                label: const Text(
-                  'Logout from Account',
-                  style: TextStyle(
-                    color: Colors.redAccent,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                onPressed: () {
-                  UserSession.clear();
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          const LoginScreen(onThemeChanged: _dummyThemeChange),
-                    ),
-                    (route) => false,
-                  );
-                },
+                minimumSize: const Size(double.infinity, 50),
               ),
+              icon: const Icon(Icons.logout, color: Colors.redAccent),
+              label: const Text(
+                'Logout',
+                style: TextStyle(color: Colors.redAccent),
+              ),
+              onPressed: () {
+                UserSession.clear();
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        const LoginScreen(onThemeChanged: _dummyThemeChange),
+                  ),
+                  (route) => false,
+                );
+              },
             ),
             const SizedBox(height: 30),
           ],
@@ -1928,5 +1350,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  static void _dummyThemeChange(ThemeMode mode, Color color) {}
+  Widget _settingsTile(
+    IconData icon,
+    String title,
+    VoidCallback onTap,
+    bool isDark,
+  ) {
+    return ListTile(
+      leading: Icon(icon, color: Theme.of(context).colorScheme.primary),
+      title: Text(
+        title,
+        style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+      ),
+      trailing: const Icon(Icons.chevron_right, size: 20, color: Colors.grey),
+      onTap: onTap,
+    );
+  }
 }

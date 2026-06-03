@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/user_session.dart';
+import '../../widgets/painters/starfield_painter.dart';
 import 'home_dashboard.dart';
 import '../alerts/alerts_screen.dart';
 import '../devices/devices_screen.dart';
@@ -7,7 +8,7 @@ import '../digital_twin/digital_twin_screen.dart';
 import '../settings/settings_screen.dart';
 
 class MainScreen extends StatefulWidget {
-  final Function(ThemeMode, Color) onThemeChanged; // <- استقبال الدالة
+  final Function(ThemeMode, Color) onThemeChanged;
   const MainScreen({super.key, required this.onThemeChanged});
 
   @override
@@ -23,7 +24,7 @@ class _MainScreenState extends State<MainScreen> {
   void initState() {
     super.initState();
     _screens = [
-      HomeDashboard(onThemeChanged: widget.onThemeChanged), // <- تمرير الدالة
+      HomeDashboard(onThemeChanged: widget.onThemeChanged),
       const AlertsScreen(),
       const DevicesScreen(),
       if (UserSession.role == "Admin") const DigitalTwinScreen(),
@@ -53,19 +54,33 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final safeIndex = _index.clamp(0, _screens.length - 1);
-    return Scaffold(
-      body: _screens[safeIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: safeIndex,
-        onTap: (i) => setState(() => _index = i),
-        backgroundColor: isDark ? const Color(0xFF1F1F1F) : Colors.white,
-        selectedItemColor: Theme.of(context).colorScheme.primary,
-        unselectedItemColor: Colors.grey,
-        type: BottomNavigationBarType.fixed,
-        items: _navItems,
-      ),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Stack(
+      children: [
+        // النجوم في الخلفية (فقط في الدارك مود)
+        if (isDark)
+          Positioned.fill(child: CustomPaint(painter: StarfieldPainter())),
+        // الـ Scaffold شفاف حتى تظهر النجوم من خلفه
+        Scaffold(
+          backgroundColor: Colors.transparent,
+          body: _screens[safeIndex],
+          bottomNavigationBar: ClipRRect(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            child: BottomNavigationBar(
+              currentIndex: safeIndex,
+              onTap: (i) => setState(() => _index = i),
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              selectedItemColor: Theme.of(context).colorScheme.primary,
+              unselectedItemColor: Colors.grey.withOpacity(0.7),
+              type: BottomNavigationBarType.fixed,
+              items: _navItems,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

@@ -1,24 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'firebase_options.dart';
 import 'screens/splash/splash_screen.dart';
 
-// ═══════════════════════════════════════════════════════════════
-//  Entry Point
-// ═══════════════════════════════════════════════════════════════
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  // Portrait only
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
 
-  // Transparent status bar
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
@@ -29,9 +25,6 @@ void main() async {
   runApp(const AuraApp());
 }
 
-// ═══════════════════════════════════════════════════════════════
-//  Root Widget — manages global theme + primary color
-// ═══════════════════════════════════════════════════════════════
 class AuraApp extends StatefulWidget {
   const AuraApp({super.key});
 
@@ -43,12 +36,40 @@ class _AuraAppState extends State<AuraApp> {
   ThemeMode _themeMode = ThemeMode.dark;
   Color _primaryColor = const Color(0xFF00D4FF);
 
-  // Called by SplashScreen → LoginScreen → ThemeSelectionScreen
+  @override
+  void initState() {
+    super.initState();
+    _loadThemePreferences();
+  }
+
+  Future<void> _loadThemePreferences() async {
+    final prefs = await SharedPreferences.getInstance();
+    final isDark = prefs.getBool('isDark') ?? true;
+    final red = prefs.getInt('accentRed') ?? 0x00;
+    final green = prefs.getInt('accentGreen') ?? 0xD4;
+    final blue = prefs.getInt('accentBlue') ?? 0xFF;
+    setState(() {
+      _themeMode = isDark ? ThemeMode.dark : ThemeMode.light;
+      _primaryColor = Color.fromARGB(255, red, green, blue);
+    });
+  }
+
+  Future<void> _saveThemePreferences(ThemeMode mode, Color color) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isDark', mode == ThemeMode.dark);
+    await prefs.setInt('accentRed', color.red);
+    await prefs.setInt('accentGreen', color.green);
+    await prefs.setInt('accentBlue', color.blue);
+  }
+
   void _updateTheme(ThemeMode mode, Color color) {
     setState(() {
       _themeMode = mode;
       _primaryColor = color;
     });
+    _saveThemePreferences(mode, color);
+    // طباعة للتأكد إن الدالة اشتغلت (في الـ debug console)
+    print('Theme changed to: ${mode == ThemeMode.dark ? "Dark" : "Light"}');
   }
 
   @override
@@ -57,7 +78,6 @@ class _AuraAppState extends State<AuraApp> {
       title: 'AURA',
       debugShowCheckedModeBanner: false,
 
-      // ── Light Theme ────────────────────────────────────────
       theme: ThemeData.light().copyWith(
         colorScheme: ColorScheme.fromSeed(
           seedColor: _primaryColor,
@@ -78,7 +98,6 @@ class _AuraAppState extends State<AuraApp> {
         ),
       ),
 
-      // ── Dark Theme ─────────────────────────────────────────
       darkTheme: ThemeData.dark().copyWith(
         colorScheme: ColorScheme.fromSeed(
           seedColor: _primaryColor,
@@ -100,15 +119,11 @@ class _AuraAppState extends State<AuraApp> {
       ),
 
       themeMode: _themeMode,
-
-      // ── Entry screen ───────────────────────────────────────
       home: SplashScreen(onThemeChanged: _updateTheme),
 
-      // ── Max-width constraint (looks good on tablets/desktop) ──
       builder: (context, child) {
         final isDark = Theme.of(context).brightness == Brightness.dark;
         return MediaQuery(
-          // Prevent font scaling from breaking layouts
           data: MediaQuery.of(
             context,
           ).copyWith(textScaler: TextScaler.noScaling),

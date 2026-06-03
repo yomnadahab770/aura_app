@@ -11,12 +11,7 @@ class HomeDashboard extends StatefulWidget {
 }
 
 class _HomeDashboardState extends State<HomeDashboard> {
-  // متغيرات مؤقتة للثيم اللي المستخدم هيختارها في الـ BottomSheet
-  String _tempMode = 'Dark';
-  Color _tempColor = const Color(0xFF00D4FF);
-
   void _triggerEmergency(BuildContext context) async {
-    // ... نفس الكود القديم بتاع emergency
     try {
       await FirebaseDatabase.instance.ref('aura/emergency').set({
         'active': true,
@@ -45,7 +40,6 @@ class _HomeDashboardState extends State<HomeDashboard> {
   }
 
   void _showThemeBottomSheet() {
-    // نعرض الـ BottomSheet بنفس تصميم ThemeSelectionScreen
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -54,9 +48,17 @@ class _HomeDashboardState extends State<HomeDashboard> {
       ),
       backgroundColor: Colors.transparent,
       builder: (BuildContext bc) {
+        // ✅ نقرأ القيم الحالية للثيم داخل الـ builder نفسه
+        final currentBrightness = Theme.of(bc).brightness;
+        final currentColor = Theme.of(bc).colorScheme.primary;
+        String tempMode = currentBrightness == Brightness.dark
+            ? 'Dark'
+            : 'Light';
+        Color tempColor = currentColor;
+
         return StatefulBuilder(
           builder: (context, setSheetState) {
-            final isDark = _tempMode == 'Dark';
+            final isDark = tempMode == 'Dark';
             final List<Color> colors = [
               const Color(0xFF00D4FF),
               const Color(0xFF6E07F0),
@@ -65,6 +67,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
               const Color(0xFFFF9800),
               const Color(0xFF9C27B0),
             ];
+
             return Container(
               decoration: BoxDecoration(
                 color: isDark
@@ -110,23 +113,19 @@ class _HomeDashboardState extends State<HomeDashboard> {
                       _modeCard(
                         'Dark',
                         Icons.nightlight_round,
-                        _tempMode == 'Dark',
+                        tempMode == 'Dark',
                         isDark,
-                        _tempColor,
-                        () {
-                          setSheetState(() => _tempMode = 'Dark');
-                        },
+                        tempColor,
+                        () => setSheetState(() => tempMode = 'Dark'),
                       ),
                       const SizedBox(width: 12),
                       _modeCard(
                         'Light',
                         Icons.wb_sunny,
-                        _tempMode == 'Light',
+                        tempMode == 'Light',
                         isDark,
-                        _tempColor,
-                        () {
-                          setSheetState(() => _tempMode = 'Light');
-                        },
+                        tempColor,
+                        () => setSheetState(() => tempMode = 'Light'),
                       ),
                     ],
                   ),
@@ -145,9 +144,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
                     runSpacing: 14,
                     children: colors.map((c) {
                       return GestureDetector(
-                        onTap: () {
-                          setSheetState(() => _tempColor = c);
-                        },
+                        onTap: () => setSheetState(() => tempColor = c),
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
                           width: 54,
@@ -156,12 +153,12 @@ class _HomeDashboardState extends State<HomeDashboard> {
                             color: c,
                             shape: BoxShape.circle,
                             border: Border.all(
-                              color: _tempColor == c
+                              color: tempColor == c
                                   ? (isDark ? Colors.white : Colors.black)
                                   : Colors.transparent,
                               width: 4,
                             ),
-                            boxShadow: _tempColor == c
+                            boxShadow: tempColor == c
                                 ? [
                                     BoxShadow(
                                       color: c.withOpacity(0.6),
@@ -171,7 +168,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
                                   ]
                                 : [],
                           ),
-                          child: _tempColor == c
+                          child: tempColor == c
                               ? const Icon(
                                   Icons.check,
                                   color: Colors.white,
@@ -188,20 +185,17 @@ class _HomeDashboardState extends State<HomeDashboard> {
                     height: 52,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: _tempColor,
+                        backgroundColor: tempColor,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
                       ),
                       onPressed: () {
-                        // تطبيق الثيم على التطبيق كله
                         widget.onThemeChanged(
-                          _tempMode == 'Dark'
-                              ? ThemeMode.dark
-                              : ThemeMode.light,
-                          _tempColor,
+                          tempMode == 'Dark' ? ThemeMode.dark : ThemeMode.light,
+                          tempColor,
                         );
-                        Navigator.pop(bc); // إغلاق الشيت
+                        Navigator.pop(bc);
                       },
                       child: const Text(
                         'Apply Theme',
@@ -275,276 +269,284 @@ class _HomeDashboardState extends State<HomeDashboard> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = Theme.of(context).colorScheme.primary;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final subTextColor = isDark ? Colors.white70 : Colors.black54;
+    final cardColor = isDark
+        ? const Color(0xFF1E1E2E)
+        : Colors.white.withOpacity(0.95);
 
-    return StreamBuilder<DatabaseEvent>(
-      stream: FirebaseDatabase.instance.ref('aura/sensors').onValue,
-      builder: (context, snap) {
-        // ... باقي الكود الخاص بقراءة الحساسات وعرضها كما هو تماماً ...
-        Map<String, dynamic> sensors = {};
-        if (snap.hasData && snap.data!.snapshot.value != null) {
-          sensors = Map<String, dynamic>.from(snap.data!.snapshot.value as Map);
-        }
-        final fire = sensors['fire'] is Map
-            ? Map<String, dynamic>.from(sensors['fire'] as Map)
-            : {};
-        final gas = sensors['gas'] is Map
-            ? Map<String, dynamic>.from(sensors['gas'] as Map)
-            : {};
-        final temp = sensors['temperature'] is Map
-            ? Map<String, dynamic>.from(sensors['temperature'] as Map)
-            : {};
-        final motion = sensors['motion'] is Map
-            ? Map<String, dynamic>.from(sensors['motion'] as Map)
-            : {};
-        final fireWarning = fire['status']?.toString() == 'warning';
-        final gasLeak = gas['status']?.toString() == 'leak';
-        final tempValue = (temp['value'] ?? 24.5).toDouble();
-        final motionActive = motion['detected'] == true;
-        final anyAlert = fireWarning || gasLeak;
+    return SafeArea(
+      child: StreamBuilder<DatabaseEvent>(
+        stream: FirebaseDatabase.instance.ref('aura/sensors').onValue,
+        builder: (context, snap) {
+          if (snap.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          Map<String, dynamic> sensors = {};
+          if (snap.hasData && snap.data!.snapshot.value != null) {
+            sensors = Map<String, dynamic>.from(
+              snap.data!.snapshot.value as Map,
+            );
+          }
+          final fire = sensors['fire'] is Map
+              ? Map<String, dynamic>.from(sensors['fire'] as Map)
+              : {};
+          final gas = sensors['gas'] is Map
+              ? Map<String, dynamic>.from(sensors['gas'] as Map)
+              : {};
+          final motion = sensors['motion'] is Map
+              ? Map<String, dynamic>.from(sensors['motion'] as Map)
+              : {};
+          final fireWarning = fire['status']?.toString() == 'warning';
+          final gasLeak = gas['status']?.toString() == 'leak';
+          final motionDetected = motion['detected'] == true;
+          final anyAlert = fireWarning || gasLeak || motionDetected;
+          final alertCount =
+              (fireWarning ? 1 : 0) +
+              (gasLeak ? 1 : 0) +
+              (motionDetected ? 1 : 0);
 
-        return Scaffold(
-          appBar: AppBar(
-            elevation: 0,
-            title: Row(
-              children: [
-                Icon(Icons.home_outlined, color: primaryColor),
-                const SizedBox(width: 8),
-                Text(
-                  'AURA',
-                  style: TextStyle(
-                    color: isDark ? Colors.white : Colors.black87,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 4,
-                  ),
+          return Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
                 ),
-              ],
-            ),
-            actions: [
-              // 🔽 زر فتح شيت اختيار الثيم
-              IconButton(
-                icon: Icon(Icons.palette_outlined, color: primaryColor),
-                onPressed: _showThemeBottomSheet,
-              ),
-              Stack(
-                children: [
-                  IconButton(
-                    icon: Icon(
-                      Icons.notifications_outlined,
-                      color: primaryColor,
-                    ),
-                    onPressed: () {},
-                  ),
-                  if (anyAlert)
-                    Positioned(
-                      right: 8,
-                      top: 8,
-                      child: Container(
-                        width: 10,
-                        height: 10,
-                        decoration: const BoxDecoration(
-                          color: Colors.red,
-                          shape: BoxShape.circle,
-                        ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'AURA',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 6,
+                        color: isDark ? Colors.white : Colors.black87,
+                        shadows: isDark
+                            ? [
+                                Shadow(
+                                  color: Colors.cyan.withOpacity(0.8),
+                                  blurRadius: 15,
+                                  offset: const Offset(0, 0),
+                                ),
+                              ]
+                            : [],
                       ),
                     ),
-                ],
+                    Row(
+                      children: [
+                        IconButton(
+                          icon: Icon(
+                            Icons.palette_outlined,
+                            color: primaryColor,
+                          ),
+                          onPressed: _showThemeBottomSheet,
+                        ),
+                        IconButton(
+                          icon: Icon(
+                            Icons.notifications_outlined,
+                            color: primaryColor,
+                          ),
+                          onPressed: () {},
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ],
-          ),
-          floatingActionButton: FloatingActionButton(
-            backgroundColor: Colors.red,
-            onPressed: () => _triggerEmergency(context),
-            child: const Icon(Icons.emergency, color: Colors.white),
-          ),
-          body: snap.connectionState == ConnectionState.waiting
-              ? const Center(child: CircularProgressIndicator())
-              : SingleChildScrollView(
+              Expanded(
+                child: SingleChildScrollView(
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        UserSession.role == "Admin"
-                            ? 'Good Morning, ${UserSession.name} 👋'
-                            : 'Welcome ${UserSession.name} 👋',
+                        'Home Overview',
                         style: TextStyle(
-                          fontSize: 22,
+                          fontSize: 28,
                           fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : Colors.black87,
+                          color: textColor,
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        anyAlert
-                            ? '⚠️ Warning Detected!'
-                            : '✅ All Systems Safe',
-                        style: TextStyle(
-                          fontSize: 15,
-                          color: anyAlert ? Colors.red : Colors.green,
-                        ),
+                        'All systems are monitoring',
+                        style: TextStyle(fontSize: 14, color: subTextColor),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 24),
+                      GridView.count(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 16,
+                        mainAxisSpacing: 16,
+                        childAspectRatio: 1.5,
+                        children: [
+                          _statusCard(
+                            title: 'Fall Detection',
+                            status: motionDetected ? 'Alert' : 'Active',
+                            subtitle: motionDetected
+                                ? 'Motion detected'
+                                : 'No issues',
+                            icon: Icons.person,
+                            color: motionDetected ? Colors.red : Colors.green,
+                          ),
+                          _statusCard(
+                            title: 'Child Safety',
+                            status: 'Monitoring',
+                            subtitle: 'No issues',
+                            icon: Icons.child_care,
+                            color: Colors.blue,
+                          ),
+                          _statusCard(
+                            title: 'Fire Detection',
+                            status: fireWarning ? 'Warning' : 'Safe',
+                            subtitle: fireWarning
+                                ? 'Fire detected!'
+                                : 'No fire detected',
+                            icon: Icons.local_fire_department,
+                            color: fireWarning ? Colors.red : Colors.orange,
+                          ),
+                          _statusCard(
+                            title: 'Live Cameras',
+                            status: '3 Cameras Active',
+                            subtitle: 'View All',
+                            icon: Icons.videocam,
+                            color: primaryColor,
+                            onTapSubtitle: () {},
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
                       Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(18),
+                        padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: anyAlert
-                              ? Colors.red.withOpacity(0.15)
-                              : (isDark
-                                    ? Colors.green.withOpacity(0.1)
-                                    : Colors.green.withOpacity(0.15)),
+                          color: cardColor,
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: anyAlert ? Colors.red : Colors.green,
-                            width: 1.5,
+                            color: primaryColor.withOpacity(0.3),
                           ),
                         ),
                         child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Icon(
-                              anyAlert ? Icons.warning : Icons.shield,
-                              color: anyAlert ? Colors.red : Colors.green,
-                              size: 28,
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'System Status',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: textColor,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  anyAlert ? 'Issues Detected' : 'All Good',
+                                  style: TextStyle(
+                                    color: anyAlert ? Colors.red : Colors.green,
+                                  ),
+                                ),
+                              ],
                             ),
-                            const SizedBox(width: 10),
-                            Text(
-                              anyAlert ? 'TAKE ACTION NOW' : 'HOME IS SECURE',
-                              style: TextStyle(
-                                fontSize: 17,
-                                fontWeight: FontWeight.bold,
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
                                 color: anyAlert ? Colors.red : Colors.green,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Text(
+                                alertCount.toString(),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 24),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Live Monitoring',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: isDark ? Colors.white : Colors.black87,
-                            ),
-                          ),
-                          Row(
-                            children: [
-                              Container(
-                                width: 8,
-                                height: 8,
-                                decoration: const BoxDecoration(
-                                  color: Colors.green,
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                              const SizedBox(width: 4),
-                              const Text(
-                                'Live',
-                                style: TextStyle(
-                                  color: Colors.green,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      GridView.count(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 12,
-                        mainAxisSpacing: 12,
-                        childAspectRatio: 1.3,
-                        children: [
-                          _card(
-                            'Fire',
-                            fireWarning ? 'Warning!' : 'Normal',
-                            Icons.local_fire_department,
-                            fireWarning ? Colors.red : Colors.orange,
-                            isDark,
-                          ),
-                          _card(
-                            'Gas',
-                            gasLeak ? 'LEAK!' : 'Safe',
-                            Icons.gas_meter_outlined,
-                            gasLeak ? Colors.red : Colors.blueAccent,
-                            isDark,
-                          ),
-                          _card(
-                            'Temp',
-                            '${tempValue.toStringAsFixed(1)}°C',
-                            Icons.thermostat,
-                            primaryColor,
-                            isDark,
-                          ),
-                          _card(
-                            'Motion',
-                            motionActive ? 'Detected!' : 'No Activity',
-                            Icons.directions_walk,
-                            motionActive ? Colors.red : Colors.purpleAccent,
-                            isDark,
-                          ),
-                        ],
-                      ),
+                      const SizedBox(height: 80),
                     ],
                   ),
                 ),
-        );
-      },
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 
-  Widget _card(
-    String title,
-    String value,
-    IconData icon,
-    Color color,
-    bool isDark,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1A1A1A) : Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: color.withOpacity(0.3)),
-        boxShadow: isDark
-            ? []
-            : [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
+  Widget _statusCard({
+    required String title,
+    required String status,
+    required String subtitle,
+    required IconData icon,
+    required Color color,
+    VoidCallback? onTapSubtitle,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark
+        ? const Color(0xFF1E1E2E)
+        : Colors.white.withOpacity(0.95);
+    final titleColor = isDark ? Colors.white70 : Colors.black54;
+    final subColor = isDark ? Colors.white38 : Colors.black38;
+
+    return GestureDetector(
+      onTap: onTapSubtitle,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: cardColor,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: color.withOpacity(0.3)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, size: 28, color: color),
+                const Spacer(),
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color:
+                        status == 'Active' ||
+                            status == 'Monitoring' ||
+                            status == 'Safe'
+                        ? Colors.green
+                        : Colors.red,
+                    shape: BoxShape.circle,
+                  ),
                 ),
               ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 30, color: color),
-          const Spacer(),
-          Text(
-            title,
-            style: TextStyle(
-              color: isDark ? Colors.white54 : Colors.black54,
-              fontSize: 13,
             ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: color,
+            const Spacer(),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: titleColor,
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: 2),
+            Text(
+              status,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+            ),
+            Text(subtitle, style: TextStyle(fontSize: 12, color: subColor)),
+          ],
+        ),
       ),
     );
   }

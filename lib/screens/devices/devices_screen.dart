@@ -8,9 +8,15 @@ class DevicesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Scaffold(
-      appBar: AppBar(title: const Text('Devices & Sensors')),
-      body: StreamBuilder<DatabaseEvent>(
+    final primaryColor = Theme.of(context).colorScheme.primary;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final subTextColor = isDark ? Colors.white70 : Colors.black54;
+    final cardColor = isDark
+        ? const Color(0xFF1E1E2E)
+        : Colors.white.withOpacity(0.95);
+
+    return SafeArea(
+      child: StreamBuilder<DatabaseEvent>(
         stream: FirebaseDatabase.instance
             .ref('aura/users/${UserSession.uid}/rooms')
             .onValue,
@@ -19,7 +25,13 @@ class DevicesScreen extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
           if (!snap.hasData || snap.data!.snapshot.value == null) {
-            return _hardcodedFallback(isDark);
+            return _hardcodedFallback(
+              isDark,
+              primaryColor,
+              textColor,
+              subTextColor,
+              cardColor,
+            );
           }
           final roomsRaw = Map<String, dynamic>.from(
             snap.data!.snapshot.value as Map,
@@ -38,13 +50,16 @@ class DevicesScreen extends StatelessWidget {
                   : type == 'Living Room'
                   ? Icons.weekend
                   : Icons.roofing;
-              return _device(
-                name,
-                devices,
-                'Online',
-                Colors.green,
-                icon,
-                isDark,
+              return _deviceCard(
+                name: name,
+                location: devices,
+                status: 'Online',
+                color: Colors.green,
+                icon: icon,
+                isDark: isDark,
+                textColor: textColor,
+                subTextColor: subTextColor,
+                cardColor: cardColor,
               );
             }).toList(),
           );
@@ -53,61 +68,91 @@ class DevicesScreen extends StatelessWidget {
     );
   }
 
-  Widget _hardcodedFallback(bool isDark) {
+  Widget _hardcodedFallback(
+    bool isDark,
+    Color primaryColor,
+    Color textColor,
+    Color subTextColor,
+    Color cardColor,
+  ) {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        _device(
-          'Fire Detector',
-          'Kitchen',
-          'Online',
-          Colors.green,
-          Icons.local_fire_department,
-          isDark,
+        _deviceCard(
+          name: 'Fire Detector',
+          location: 'Kitchen',
+          status: 'Online',
+          color: Colors.green,
+          icon: Icons.local_fire_department,
+          isDark: isDark,
+          textColor: textColor,
+          subTextColor: subTextColor,
+          cardColor: cardColor,
         ),
-        _device(
-          'Gas Sensor',
-          'Living Room',
-          'Online',
-          Colors.green,
-          Icons.gas_meter_outlined,
-          isDark,
+        _deviceCard(
+          name: 'Gas Sensor',
+          location: 'Living Room',
+          status: 'Online',
+          color: Colors.green,
+          icon: Icons.gas_meter_outlined,
+          isDark: isDark,
+          textColor: textColor,
+          subTextColor: subTextColor,
+          cardColor: cardColor,
         ),
-        _device(
-          'Temperature Sensor',
-          'Bedroom',
-          'Online',
-          Colors.green,
-          Icons.thermostat,
-          isDark,
+        _deviceCard(
+          name: 'Temperature Sensor',
+          location: 'Bedroom',
+          status: 'Online',
+          color: Colors.green,
+          icon: Icons.thermostat,
+          isDark: isDark,
+          textColor: textColor,
+          subTextColor: subTextColor,
+          cardColor: cardColor,
         ),
-        _device(
-          'Motion Sensor',
-          'Entrance',
-          'Online',
-          Colors.green,
-          Icons.directions_walk,
-          isDark,
+        _deviceCard(
+          name: 'Motion Sensor',
+          location: 'Entrance',
+          status: 'Online',
+          color: Colors.green,
+          icon: Icons.directions_walk,
+          isDark: isDark,
+          textColor: textColor,
+          subTextColor: subTextColor,
+          cardColor: cardColor,
         ),
       ],
     );
   }
 
-  Widget _device(
-    String name,
-    String loc,
-    String status,
-    Color color,
-    IconData icon,
-    bool isDark,
-  ) {
+  Widget _deviceCard({
+    required String name,
+    required String location,
+    required String status,
+    required Color color,
+    required IconData icon,
+    required bool isDark,
+    required Color textColor,
+    required Color subTextColor,
+    required Color cardColor,
+  }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1A1A1A) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        color: cardColor,
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: color.withOpacity(0.3)),
+        boxShadow: isDark
+            ? []
+            : [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+              ],
       ),
       child: Row(
         children: [
@@ -127,17 +172,15 @@ class DevicesScreen extends StatelessWidget {
                 Text(
                   name,
                   style: TextStyle(
-                    color: isDark ? Colors.white : Colors.black87,
+                    color: textColor,
                     fontWeight: FontWeight.bold,
-                    fontSize: 15,
+                    fontSize: 16,
                   ),
                 ),
+                const SizedBox(height: 2),
                 Text(
-                  loc,
-                  style: TextStyle(
-                    color: isDark ? Colors.white54 : Colors.black54,
-                    fontSize: 12,
-                  ),
+                  location,
+                  style: TextStyle(color: subTextColor, fontSize: 13),
                 ),
               ],
             ),

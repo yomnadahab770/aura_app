@@ -15,6 +15,7 @@ dependencies:
   web_socket_channel: ^3.0.0
   firebase_core: ^4.9.0
   firebase_database: ^12.4.1
+  shared_preferences: ^2.2.2   # <-- تمت الإضافة
 
 dev_dependencies:
   flutter_test:
