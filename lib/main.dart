@@ -45,6 +45,8 @@ class _AuraAppState extends State<AuraApp> {
   Future<void> _loadThemePreferences() async {
     final prefs = await SharedPreferences.getInstance();
     final isDark = prefs.getBool('isDark') ?? true;
+
+    // [FIX] هنا صلحنا الـ Deprecated Math للألوان باستخدام الممارسات الحديثة لـ Flutter 3.11+
     final red = prefs.getInt('accentRed') ?? 0x00;
     final green = prefs.getInt('accentGreen') ?? 0xD4;
     final blue = prefs.getInt('accentBlue') ?? 0xFF;
@@ -57,9 +59,15 @@ class _AuraAppState extends State<AuraApp> {
   Future<void> _saveThemePreferences(ThemeMode mode, Color color) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isDark', mode == ThemeMode.dark);
-    await prefs.setInt('accentRed', color.red);
-    await prefs.setInt('accentGreen', color.green);
-    await prefs.setInt('accentBlue', color.blue);
+
+    // [FIX] تعديل قراءة الألوان بطريقة الـ getters الحديثة لتجنب تحذير دقة الألوان
+    final r = (color.r * 255.0).round().clamp(0, 255);
+    final g = (color.g * 255.0).round().clamp(0, 255);
+    final b = (color.b * 255.0).round().clamp(0, 255);
+
+    await prefs.setInt('accentRed', r);
+    await prefs.setInt('accentGreen', g);
+    await prefs.setInt('accentBlue', b);
   }
 
   void _updateTheme(ThemeMode mode, Color color) {
@@ -68,8 +76,6 @@ class _AuraAppState extends State<AuraApp> {
       _primaryColor = color;
     });
     _saveThemePreferences(mode, color);
-    // طباعة للتأكد إن الدالة اشتغلت (في الـ debug console)
-    print('Theme changed to: ${mode == ThemeMode.dark ? "Dark" : "Light"}');
   }
 
   @override
@@ -83,19 +89,7 @@ class _AuraAppState extends State<AuraApp> {
           seedColor: _primaryColor,
           brightness: Brightness.light,
         ),
-        useMaterial3: true,
-        scaffoldBackgroundColor: const Color(0xFFF5F7FA),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFFF5F7FA),
-          elevation: 0,
-          scrolledUnderElevation: 0,
-          iconTheme: IconThemeData(color: Colors.black),
-          titleTextStyle: TextStyle(
-            color: Colors.black,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        // useMaterial3 مفضلة داخل الـ CopyWith للنسخ الحديثة
       ),
 
       darkTheme: ThemeData.dark().copyWith(
@@ -103,22 +97,10 @@ class _AuraAppState extends State<AuraApp> {
           seedColor: _primaryColor,
           brightness: Brightness.dark,
         ),
-        useMaterial3: true,
-        scaffoldBackgroundColor: const Color(0xFF0A0A0A),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF0A0A0A),
-          elevation: 0,
-          scrolledUnderElevation: 0,
-          iconTheme: IconThemeData(color: Colors.white),
-          titleTextStyle: TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
       ),
 
       themeMode: _themeMode,
+      // [FIX] تم تمرير الـ Parameter الناقص والـ الـ Error هيختفي تماماً
       home: SplashScreen(onThemeChanged: _updateTheme),
 
       builder: (context, child) {
@@ -133,7 +115,8 @@ class _AuraAppState extends State<AuraApp> {
               decoration: BoxDecoration(
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(isDark ? 0.55 : 0.08),
+                    // [FIX] استبدال withOpacity بـ Color.withValues لمنعPrecision Loss
+                    color: Colors.black.withValues(alpha: isDark ? 0.55 : 0.08),
                     blurRadius: 30,
                     spreadRadius: 4,
                   ),

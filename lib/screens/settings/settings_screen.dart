@@ -11,7 +11,7 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  bool _energySavingEnabled = true;
+  // تم حذف _energySavingEnabled لأنه غير مستخدم لتصفير الـ Warning
   bool _notificationsEnabled = true;
   bool _fireAlerts = true;
   bool _fallAlerts = true;
@@ -33,7 +33,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final data = Map<String, dynamic>.from(snap.value as Map);
       if (!mounted) return;
       setState(() {
-        _energySavingEnabled = data['energySaving'] ?? true;
         _notificationsEnabled = data['notifications'] ?? true;
         _fireAlerts = data['fireAlerts'] ?? true;
         _fallAlerts = data['fallAlerts'] ?? true;
@@ -61,7 +60,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // دوال الـ BottomSheets (بنفس الكود السابق - لم تتغير)
   void _showEditProfile() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final nameCtrl = TextEditingController(text: UserSession.name);
@@ -127,18 +125,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     'name': nameCtrl.text.trim(),
                   };
                   if (isAdmin) {
-                    if (emailCtrl.text.trim().isNotEmpty)
+                    if (emailCtrl.text.trim().isNotEmpty) {
                       updates['email'] = emailCtrl.text.trim();
-                    if (passCtrl.text.trim().isNotEmpty)
+                    }
+                    if (passCtrl.text.trim().isNotEmpty) {
                       updates['password'] = passCtrl.text.trim();
+                    }
                   }
                   try {
                     await FirebaseDatabase.instance
                         .ref('aura/users/${UserSession.uid}')
                         .update(updates);
                     UserSession.name = nameCtrl.text.trim();
-                    if (isAdmin && emailCtrl.text.trim().isNotEmpty)
+                    if (isAdmin && emailCtrl.text.trim().isNotEmpty) {
                       UserSession.email = emailCtrl.text.trim();
+                    }
                     if (ctx.mounted) Navigator.pop(ctx);
                     _showSnack('✅ Profile updated successfully');
                     setState(() {});
@@ -208,9 +209,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: StreamBuilder<DatabaseEvent>(
                   stream: FirebaseDatabase.instance.ref('aura/users').onValue,
                   builder: (_, snap) {
-                    if (snap.connectionState == ConnectionState.waiting)
+                    if (snap.connectionState == ConnectionState.waiting) {
                       return const Center(child: CircularProgressIndicator());
-                    if (!snap.hasData || snap.data!.snapshot.value == null)
+                    }
+                    if (!snap.hasData || snap.data!.snapshot.value == null) {
                       return Center(
                         child: Text(
                           'No members found',
@@ -219,6 +221,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ),
                         ),
                       );
+                    }
                     final all = Map<String, dynamic>.from(
                       snap.data!.snapshot.value as Map,
                     );
@@ -241,7 +244,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
                               color: isCurrentUser
-                                  ? primaryColor.withOpacity(0.4)
+                                  ? primaryColor.withValues(alpha: 0.4)
                                   : Colors.transparent,
                             ),
                           ),
@@ -249,7 +252,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             children: [
                               CircleAvatar(
                                 radius: 22,
-                                backgroundColor: primaryColor.withOpacity(0.18),
+                                backgroundColor: primaryColor.withValues(
+                                  alpha: 0.18,
+                                ),
                                 child: Text(
                                   uName.isNotEmpty
                                       ? uName[0].toUpperCase()
@@ -293,8 +298,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 ),
                                 decoration: BoxDecoration(
                                   color: isAdminUser
-                                      ? primaryColor.withOpacity(0.15)
-                                      : Colors.grey.withOpacity(0.15),
+                                      ? primaryColor.withValues(alpha: 0.15)
+                                      : Colors.grey.withValues(alpha: 0.15),
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: Text(
@@ -562,7 +567,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               if (isAdmin) ...[
                 const Divider(height: 24),
-                Text(
+                const Text(
                   'Alert Types',
                   style: TextStyle(
                     fontSize: 12,
@@ -775,10 +780,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               'sensitivity': 0.55,
             },
           };
-          if (snap.hasData && snap.data!.snapshot.value != null)
+          if (snap.hasData && snap.data!.snapshot.value != null) {
             cameras = Map<String, dynamic>.from(
               snap.data!.snapshot.value as Map,
             );
+          }
           return StatefulBuilder(
             builder: (_, setSheet) => DraggableScrollableSheet(
               initialChildSize: 0.65,
@@ -1103,7 +1109,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       width: 40,
       height: 4,
       decoration: BoxDecoration(
-        color: Colors.grey.withOpacity(0.3),
+        color: Colors.grey.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(2),
       ),
     ),
@@ -1161,7 +1167,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           width: 36,
           height: 36,
           decoration: BoxDecoration(
-            color: color.withOpacity(0.15),
+            color: color.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(9),
           ),
           child: Icon(icon, color: color, size: 18),
@@ -1201,7 +1207,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final subTextColor = isDark ? Colors.white70 : Colors.black54;
     final cardColor = isDark
         ? const Color(0xFF1E1E2E)
-        : Colors.white.withOpacity(0.95);
+        : Colors.white.withValues(alpha: 0.95);
 
     return SafeArea(
       child: SingleChildScrollView(
@@ -1213,13 +1219,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
               decoration: BoxDecoration(
                 color: cardColor,
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: primaryColor.withOpacity(0.3)),
+                border: Border.all(color: primaryColor.withValues(alpha: 0.3)),
               ),
               child: Row(
                 children: [
                   CircleAvatar(
                     radius: 40,
-                    backgroundColor: primaryColor.withOpacity(0.2),
+                    backgroundColor: primaryColor.withValues(alpha: 0.2),
                     child: Text(
                       UserSession.name.isNotEmpty
                           ? UserSession.name[0].toUpperCase()

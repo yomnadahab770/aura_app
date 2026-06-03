@@ -74,7 +74,8 @@ class _MainScreenState extends State<MainScreen> {
               backgroundColor: Colors.transparent,
               elevation: 0,
               selectedItemColor: Theme.of(context).colorScheme.primary,
-              unselectedItemColor: Colors.grey.withOpacity(0.7),
+              // [FIX] withOpacity -> withValues لتجنب الـ Warning
+              unselectedItemColor: Colors.grey.withValues(alpha: 0.7),
               type: BottomNavigationBarType.fixed,
               items: _navItems,
             ),

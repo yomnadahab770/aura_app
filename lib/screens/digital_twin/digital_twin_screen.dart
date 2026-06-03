@@ -172,10 +172,12 @@ class _DigitalTwinScreenState extends State<DigitalTwinScreen>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primary = Theme.of(context).colorScheme.primary;
     final textColor = isDark ? Colors.white : Colors.black87;
-    final subTextColor = isDark ? Colors.white70 : Colors.black54;
+    // [FIX] تم حذف الـ subTextColor القديم غير المستخدم من هنا لتصفير الـ Warning
     final cardColor = isDark
         ? const Color(0xFF1E1E2E)
-        : Colors.white.withOpacity(0.95);
+        : Colors.white.withValues(
+            alpha: 0.95,
+          ); // [FIX] withOpacity -> withValues
 
     return SafeArea(
       child: StreamBuilder<DatabaseEvent>(
@@ -248,12 +250,14 @@ class _DigitalTwinScreenState extends State<DigitalTwinScreen>
                             width: 8,
                             height: 8,
                             decoration: BoxDecoration(
-                              color: Colors.green.withOpacity(_pulse.value),
+                              color: Colors.green.withValues(
+                                alpha: _pulse.value,
+                              ), // [FIX]
                               shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.green.withOpacity(
-                                    _pulse.value * 0.5,
+                                  color: Colors.green.withValues(
+                                    alpha: _pulse.value * 0.5, // [FIX]
                                   ),
                                   blurRadius: 6,
                                   spreadRadius: 1,
@@ -262,7 +266,7 @@ class _DigitalTwinScreenState extends State<DigitalTwinScreen>
                             ),
                           ),
                           const SizedBox(width: 6),
-                          Text(
+                          const Text(
                             'Live',
                             style: TextStyle(
                               fontSize: 12,
@@ -287,12 +291,12 @@ class _DigitalTwinScreenState extends State<DigitalTwinScreen>
                       color: cardColor,
                       borderRadius: BorderRadius.circular(22),
                       border: Border.all(
-                        color: primary.withOpacity(0.2),
+                        color: primary.withValues(alpha: 0.2), // [FIX]
                         width: 1.5,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: primary.withOpacity(0.06),
+                          color: primary.withValues(alpha: 0.06), // [FIX]
                           blurRadius: 20,
                           spreadRadius: 2,
                         ),
@@ -325,7 +329,9 @@ class _DigitalTwinScreenState extends State<DigitalTwinScreen>
                                       gradient: LinearGradient(
                                         colors: [
                                           Colors.transparent,
-                                          primary.withOpacity(0.25),
+                                          primary.withValues(
+                                            alpha: 0.25,
+                                          ), // [FIX]
                                           Colors.transparent,
                                         ],
                                       ),
@@ -366,7 +372,11 @@ class _DigitalTwinScreenState extends State<DigitalTwinScreen>
                                   style: TextStyle(
                                     fontSize: 9,
                                     letterSpacing: 0.8,
-                                    color: subTextColor.withOpacity(0.3),
+                                    color:
+                                        (isDark
+                                                ? Colors.white70
+                                                : Colors.black54)
+                                            .withValues(alpha: 0.3), // [FIX]
                                   ),
                                 ),
                               ),
@@ -417,13 +427,17 @@ class _DigitalTwinScreenState extends State<DigitalTwinScreen>
       animation: _pulse,
       builder: (_, __) => Container(
         width: double.infinity,
-        color: Colors.red.withOpacity(0.12 + _pulse.value * 0.06),
+        color: Colors.red.withValues(
+          alpha: 0.12 + _pulse.value * 0.06,
+        ), // [FIX]
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
         child: Row(
           children: [
             Icon(
               Icons.warning_rounded,
-              color: Colors.red.withOpacity(0.7 + _pulse.value * 0.3),
+              color: Colors.red.withValues(
+                alpha: 0.7 + _pulse.value * 0.3,
+              ), // [FIX]
               size: 18,
             ),
             const SizedBox(width: 8),
@@ -519,7 +533,6 @@ class _DigitalTwinScreenState extends State<DigitalTwinScreen>
     bool isDark,
     Color primary,
   ) {
-    final subTextColor = isDark ? Colors.white70 : Colors.black54;
     return AnimatedContainer(
       duration: const Duration(milliseconds: 250),
       curve: Curves.easeOutCubic,
@@ -528,12 +541,15 @@ class _DigitalTwinScreenState extends State<DigitalTwinScreen>
       decoration: BoxDecoration(
         color: isDark
             ? const Color(0xFF1E1E2E)
-            : Colors.white.withOpacity(0.95),
+            : Colors.white.withValues(alpha: 0.95), // [FIX]
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: status.color.withOpacity(0.4), width: 1.5),
+        border: Border.all(
+          color: status.color.withValues(alpha: 0.4),
+          width: 1.5,
+        ), // [FIX]
         boxShadow: [
           BoxShadow(
-            color: status.color.withOpacity(0.08),
+            color: status.color.withValues(alpha: 0.08), // [FIX]
             blurRadius: 16,
             spreadRadius: 2,
           ),
@@ -545,7 +561,7 @@ class _DigitalTwinScreenState extends State<DigitalTwinScreen>
             width: 50,
             height: 50,
             decoration: BoxDecoration(
-              color: status.color.withOpacity(0.12),
+              color: status.color.withValues(alpha: 0.12), // [FIX]
               borderRadius: BorderRadius.circular(13),
             ),
             child: Icon(room.icon, color: status.color, size: 26),
@@ -578,7 +594,7 @@ class _DigitalTwinScreenState extends State<DigitalTwinScreen>
                         vertical: 3,
                       ),
                       decoration: BoxDecoration(
-                        color: status.color.withOpacity(0.12),
+                        color: status.color.withValues(alpha: 0.12), // [FIX]
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
@@ -600,8 +616,8 @@ class _DigitalTwinScreenState extends State<DigitalTwinScreen>
                             vertical: 3,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.red.withOpacity(
-                              0.08 + _pulse.value * 0.1,
+                            color: Colors.red.withValues(
+                              alpha: 0.08 + _pulse.value * 0.1, // [FIX]
                             ),
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -612,7 +628,9 @@ class _DigitalTwinScreenState extends State<DigitalTwinScreen>
                                 width: 5,
                                 height: 5,
                                 decoration: BoxDecoration(
-                                  color: Colors.red.withOpacity(_pulse.value),
+                                  color: Colors.red.withValues(
+                                    alpha: _pulse.value,
+                                  ), // [FIX]
                                   shape: BoxShape.circle,
                                 ),
                               ),
@@ -645,10 +663,6 @@ class _DigitalTwinScreenState extends State<DigitalTwinScreen>
   }
 }
 
-// باقي الويدجتات المساعدة (_RoomTile, _SensorCard, _CompassWidget, _FloorPlanPainter, _RoomDef, _RoomStatus)
-// نفس الكود السابق دون تغيير (لأنها كانت خالية من النجوم)
-// سأضعها مختصرة هنا لكنك يمكنك استخدام نفس الكود القديم.
-
 class _RoomTile extends StatelessWidget {
   final _RoomDef room;
   final _RoomStatus status;
@@ -673,17 +687,19 @@ class _RoomTile extends StatelessWidget {
       margin: const EdgeInsets.all(3),
       decoration: BoxDecoration(
         color: isSelected
-            ? status.color.withOpacity(0.2)
-            : status.color.withOpacity(0.07),
+            ? status.color.withValues(alpha: 0.2) // [FIX]
+            : status.color.withValues(alpha: 0.07), // [FIX]
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: isSelected ? status.color : status.color.withOpacity(0.35),
+          color: isSelected
+              ? status.color
+              : status.color.withValues(alpha: 0.35), // [FIX]
           width: isSelected ? 1.8 : 1,
         ),
         boxShadow: isSelected
             ? [
                 BoxShadow(
-                  color: status.color.withOpacity(0.2),
+                  color: status.color.withValues(alpha: 0.2), // [FIX]
                   blurRadius: 10,
                   spreadRadius: 1,
                 ),
@@ -708,15 +724,18 @@ class _RoomTile extends StatelessWidget {
           if (status.hasAlert)
             AnimatedBuilder(
               animation: pulse,
-              builder: (_, __) => Container(
+              builder: (_, _placeholder) => Container(
+                // [FIX] تم تعديل البارامتر لتجنب الـ __ المتكررة
                 width: 6,
                 height: 6,
                 decoration: BoxDecoration(
-                  color: status.color.withOpacity(pulse.value),
+                  color: status.color.withValues(alpha: pulse.value), // [FIX]
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: status.color.withOpacity(pulse.value * 0.6),
+                      color: status.color.withValues(
+                        alpha: pulse.value * 0.6,
+                      ), // [FIX]
                       blurRadius: 6,
                       spreadRadius: 1,
                     ),
@@ -729,7 +748,7 @@ class _RoomTile extends StatelessWidget {
               width: 6,
               height: 6,
               decoration: BoxDecoration(
-                color: Colors.green.withOpacity(0.7),
+                color: Colors.green.withValues(alpha: 0.7), // [FIX]
                 shape: BoxShape.circle,
               ),
             ),
@@ -764,12 +783,12 @@ class _SensorCard extends StatelessWidget {
           decoration: BoxDecoration(
             color: isDark
                 ? const Color(0xFF1E1E2E)
-                : Colors.white.withOpacity(0.95),
+                : Colors.white.withValues(alpha: 0.95), // [FIX]
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
               color: hasAlert
-                  ? color.withOpacity(0.4 + pulse.value * 0.3)
-                  : color.withOpacity(0.25),
+                  ? color.withValues(alpha: 0.4 + pulse.value * 0.3) // [FIX]
+                  : color.withValues(alpha: 0.25), // [FIX]
               width: hasAlert ? 1.5 : 1,
             ),
           ),
@@ -809,7 +828,9 @@ class _CompassWidget extends StatelessWidget {
   const _CompassWidget({required this.isDark});
   @override
   Widget build(BuildContext context) {
-    final color = (isDark ? Colors.white : Colors.black).withOpacity(0.2);
+    final color = (isDark ? Colors.white : Colors.black).withValues(
+      alpha: 0.2,
+    ); // [FIX]
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -840,16 +861,22 @@ class _FloorPlanPainter extends CustomPainter {
         ..color = isDark ? const Color(0xFF111827) : const Color(0xFFF0F4FF),
     );
     final gridPaint = Paint()
-      ..color = base.withOpacity(0.04)
+      ..color = base
+          .withValues(alpha: 0.04) // [FIX]
       ..strokeWidth = 0.8;
-    for (double x = 0; x < size.width; x += 18)
+    for (double x = 0; x < size.width; x += 18) {
       canvas.drawLine(Offset(x, 0), Offset(x, size.height), gridPaint);
-    for (double y = 0; y < size.height; y += 18)
+    }
+    for (double y = 0; y < size.height; y += 18) {
       canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
+    }
     final glowPaint = Paint()
       ..shader =
           RadialGradient(
-            colors: [primaryColor.withOpacity(0.07), Colors.transparent],
+            colors: [
+              primaryColor.withValues(alpha: 0.07),
+              Colors.transparent,
+            ], // [FIX]
             radius: 0.8,
           ).createShader(
             Rect.fromCircle(
@@ -859,7 +886,8 @@ class _FloorPlanPainter extends CustomPainter {
           );
     canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), glowPaint);
     final wallPaint = Paint()
-      ..color = base.withOpacity(0.2)
+      ..color = base
+          .withValues(alpha: 0.2) // [FIX]
       ..strokeWidth = 2.2
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
@@ -871,7 +899,8 @@ class _FloorPlanPainter extends CustomPainter {
       wallPaint,
     );
     final divPaint = Paint()
-      ..color = base.withOpacity(0.1)
+      ..color = base
+          .withValues(alpha: 0.1) // [FIX]
       ..strokeWidth = 1.2
       ..style = PaintingStyle.stroke;
     canvas.drawLine(
@@ -894,7 +923,14 @@ class _FloorPlanPainter extends CustomPainter {
       Offset(size.width - 6, size.height * 0.665),
       divPaint,
     );
-    _drawDoor(canvas, size, 0.04, 0.455, 0.08, base.withOpacity(0.18));
+    _drawDoor(
+      canvas,
+      size,
+      0.04,
+      0.455,
+      0.08,
+      base.withValues(alpha: 0.18),
+    ); // [FIX]
     _drawDoor(canvas, size, 0.52, 0.455, 0.08, base.withOpacity(0.18));
   }
 

@@ -11,33 +11,7 @@ class HomeDashboard extends StatefulWidget {
 }
 
 class _HomeDashboardState extends State<HomeDashboard> {
-  void _triggerEmergency(BuildContext context) async {
-    try {
-      await FirebaseDatabase.instance.ref('aura/emergency').set({
-        'active': true,
-        'triggeredBy': UserSession.name,
-        'timestamp': DateTime.now().toIso8601String(),
-      });
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('🚨 Emergency Mode Activated — Help is on the way!'),
-            backgroundColor: Colors.redAccent,
-            duration: Duration(seconds: 4),
-          ),
-        );
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('❌ Failed to trigger emergency. Check connection.'),
-            backgroundColor: Colors.orange,
-          ),
-        );
-      }
-    }
-  }
+  // تم حذف _triggerEmergency لأنها غير مستخدمة لتصفير الـ Warning
 
   void _showThemeBottomSheet() {
     showModalBottomSheet(
@@ -48,7 +22,6 @@ class _HomeDashboardState extends State<HomeDashboard> {
       ),
       backgroundColor: Colors.transparent,
       builder: (BuildContext bc) {
-        // ✅ نقرأ القيم الحالية للثيم داخل الـ builder نفسه
         final currentBrightness = Theme.of(bc).brightness;
         final currentColor = Theme.of(bc).colorScheme.primary;
         String tempMode = currentBrightness == Brightness.dark
@@ -59,13 +32,14 @@ class _HomeDashboardState extends State<HomeDashboard> {
         return StatefulBuilder(
           builder: (context, setSheetState) {
             final isDark = tempMode == 'Dark';
-            final List<Color> colors = [
-              const Color(0xFF00D4FF),
-              const Color(0xFF6E07F0),
-              const Color(0xFFFF2D55),
-              const Color(0xFF4CAF50),
-              const Color(0xFFFF9800),
-              const Color(0xFF9C27B0),
+            const List<Color> colors = [
+              // إضافة const هنا
+              Color(0xFF00D4FF),
+              Color(0xFF6E07F0),
+              Color(0xFFFF2D55),
+              Color(0xFF4CAF50),
+              Color(0xFFFF9800),
+              Color(0xFF9C27B0),
             ];
 
             return Container(
@@ -161,7 +135,9 @@ class _HomeDashboardState extends State<HomeDashboard> {
                             boxShadow: tempColor == c
                                 ? [
                                     BoxShadow(
-                                      color: c.withOpacity(0.6),
+                                      color: c.withValues(
+                                        alpha: 0.6,
+                                      ), // [FIX] withOpacity -> withValues
                                       blurRadius: 14,
                                       spreadRadius: 2,
                                     ),
@@ -233,7 +209,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
           padding: const EdgeInsets.symmetric(vertical: 20),
           decoration: BoxDecoration(
             color: selected
-                ? selectedColor.withOpacity(0.15)
+                ? selectedColor.withValues(alpha: 0.15) // [FIX]
                 : (isDark ? const Color(0xFF1F1F1F) : Colors.white),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
@@ -273,7 +249,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
     final subTextColor = isDark ? Colors.white70 : Colors.black54;
     final cardColor = isDark
         ? const Color(0xFF1E1E2E)
-        : Colors.white.withOpacity(0.95);
+        : Colors.white.withValues(alpha: 0.95); // [FIX]
 
     return SafeArea(
       child: StreamBuilder<DatabaseEvent>(
@@ -297,6 +273,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
           final motion = sensors['motion'] is Map
               ? Map<String, dynamic>.from(sensors['motion'] as Map)
               : {};
+
           final fireWarning = fire['status']?.toString() == 'warning';
           final gasLeak = gas['status']?.toString() == 'leak';
           final motionDetected = motion['detected'] == true;
@@ -326,7 +303,9 @@ class _HomeDashboardState extends State<HomeDashboard> {
                         shadows: isDark
                             ? [
                                 Shadow(
-                                  color: Colors.cyan.withOpacity(0.8),
+                                  color: Colors.cyan.withValues(
+                                    alpha: 0.8,
+                                  ), // [FIX]
                                   blurRadius: 15,
                                   offset: const Offset(0, 0),
                                 ),
@@ -425,8 +404,8 @@ class _HomeDashboardState extends State<HomeDashboard> {
                           color: cardColor,
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: primaryColor.withOpacity(0.3),
-                          ),
+                            color: primaryColor.withValues(alpha: 0.3),
+                          ), // [FIX]
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -491,7 +470,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cardColor = isDark
         ? const Color(0xFF1E1E2E)
-        : Colors.white.withOpacity(0.95);
+        : Colors.white.withValues(alpha: 0.95); // [FIX]
     final titleColor = isDark ? Colors.white70 : Colors.black54;
     final subColor = isDark ? Colors.white38 : Colors.black38;
 
@@ -502,7 +481,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
         decoration: BoxDecoration(
           color: cardColor,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: color.withOpacity(0.3)),
+          border: Border.all(color: color.withValues(alpha: 0.3)), // [FIX]
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
