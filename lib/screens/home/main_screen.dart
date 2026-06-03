@@ -7,7 +7,9 @@ import '../digital_twin/digital_twin_screen.dart';
 import '../settings/settings_screen.dart';
 
 class MainScreen extends StatefulWidget {
-  const MainScreen({super.key});
+  final Function(ThemeMode, Color) onThemeChanged; // <- استقبال الدالة
+  const MainScreen({super.key, required this.onThemeChanged});
+
   @override
   State<MainScreen> createState() => _MainScreenState();
 }
@@ -21,7 +23,7 @@ class _MainScreenState extends State<MainScreen> {
   void initState() {
     super.initState();
     _screens = [
-      const HomeDashboard(),
+      HomeDashboard(onThemeChanged: widget.onThemeChanged), // <- تمرير الدالة
       const AlertsScreen(),
       const DevicesScreen(),
       if (UserSession.role == "Admin") const DigitalTwinScreen(),

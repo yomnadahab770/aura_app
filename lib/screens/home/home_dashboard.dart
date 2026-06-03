@@ -2,10 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 import '../../core/user_session.dart';
 
-class HomeDashboard extends StatelessWidget {
-  const HomeDashboard({super.key});
+class HomeDashboard extends StatefulWidget {
+  final Function(ThemeMode, Color) onThemeChanged;
+  const HomeDashboard({super.key, required this.onThemeChanged});
+
+  @override
+  State<HomeDashboard> createState() => _HomeDashboardState();
+}
+
+class _HomeDashboardState extends State<HomeDashboard> {
+  // متغيرات مؤقتة للثيم اللي المستخدم هيختارها في الـ BottomSheet
+  String _tempMode = 'Dark';
+  Color _tempColor = const Color(0xFF00D4FF);
 
   void _triggerEmergency(BuildContext context) async {
+    // ... نفس الكود القديم بتاع emergency
     try {
       await FirebaseDatabase.instance.ref('aura/emergency').set({
         'active': true,
@@ -33,6 +44,233 @@ class HomeDashboard extends StatelessWidget {
     }
   }
 
+  void _showThemeBottomSheet() {
+    // نعرض الـ BottomSheet بنفس تصميم ThemeSelectionScreen
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+      ),
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext bc) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            final isDark = _tempMode == 'Dark';
+            final List<Color> colors = [
+              const Color(0xFF00D4FF),
+              const Color(0xFF6E07F0),
+              const Color(0xFFFF2D55),
+              const Color(0xFF4CAF50),
+              const Color(0xFFFF9800),
+              const Color(0xFF9C27B0),
+            ];
+            return Container(
+              decoration: BoxDecoration(
+                color: isDark
+                    ? const Color(0xFF0A0A0A)
+                    : const Color(0xFFF5F7FA),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(25),
+                ),
+              ),
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 10),
+                  Text(
+                    'Customize AURA',
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : Colors.black87,
+                    ),
+                  ),
+                  Text(
+                    'Make it yours',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: isDark ? Colors.grey : Colors.black45,
+                    ),
+                  ),
+                  const SizedBox(height: 30),
+                  Text(
+                    'Theme Mode',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      _modeCard(
+                        'Dark',
+                        Icons.nightlight_round,
+                        _tempMode == 'Dark',
+                        isDark,
+                        _tempColor,
+                        () {
+                          setSheetState(() => _tempMode = 'Dark');
+                        },
+                      ),
+                      const SizedBox(width: 12),
+                      _modeCard(
+                        'Light',
+                        Icons.wb_sunny,
+                        _tempMode == 'Light',
+                        isDark,
+                        _tempColor,
+                        () {
+                          setSheetState(() => _tempMode = 'Light');
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 32),
+                  Text(
+                    'Accent Color',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Wrap(
+                    spacing: 14,
+                    runSpacing: 14,
+                    children: colors.map((c) {
+                      return GestureDetector(
+                        onTap: () {
+                          setSheetState(() => _tempColor = c);
+                        },
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          width: 54,
+                          height: 54,
+                          decoration: BoxDecoration(
+                            color: c,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: _tempColor == c
+                                  ? (isDark ? Colors.white : Colors.black)
+                                  : Colors.transparent,
+                              width: 4,
+                            ),
+                            boxShadow: _tempColor == c
+                                ? [
+                                    BoxShadow(
+                                      color: c.withOpacity(0.6),
+                                      blurRadius: 14,
+                                      spreadRadius: 2,
+                                    ),
+                                  ]
+                                : [],
+                          ),
+                          child: _tempColor == c
+                              ? const Icon(
+                                  Icons.check,
+                                  color: Colors.white,
+                                  size: 22,
+                                )
+                              : null,
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 30),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _tempColor,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      onPressed: () {
+                        // تطبيق الثيم على التطبيق كله
+                        widget.onThemeChanged(
+                          _tempMode == 'Dark'
+                              ? ThemeMode.dark
+                              : ThemeMode.light,
+                          _tempColor,
+                        );
+                        Navigator.pop(bc); // إغلاق الشيت
+                      },
+                      child: const Text(
+                        'Apply Theme',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _modeCard(
+    String title,
+    IconData icon,
+    bool selected,
+    bool isDark,
+    Color selectedColor,
+    VoidCallback onTap,
+  ) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          decoration: BoxDecoration(
+            color: selected
+                ? selectedColor.withOpacity(0.15)
+                : (isDark ? const Color(0xFF1F1F1F) : Colors.white),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: selected
+                  ? selectedColor
+                  : (isDark ? Colors.grey.shade800 : Colors.grey.shade300),
+              width: 2,
+            ),
+          ),
+          child: Column(
+            children: [
+              Icon(
+                icon,
+                size: 36,
+                color: selected ? selectedColor : Colors.grey,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                title,
+                style: TextStyle(
+                  color: selected ? selectedColor : Colors.grey,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -41,11 +279,11 @@ class HomeDashboard extends StatelessWidget {
     return StreamBuilder<DatabaseEvent>(
       stream: FirebaseDatabase.instance.ref('aura/sensors').onValue,
       builder: (context, snap) {
+        // ... باقي الكود الخاص بقراءة الحساسات وعرضها كما هو تماماً ...
         Map<String, dynamic> sensors = {};
         if (snap.hasData && snap.data!.snapshot.value != null) {
           sensors = Map<String, dynamic>.from(snap.data!.snapshot.value as Map);
         }
-
         final fire = sensors['fire'] is Map
             ? Map<String, dynamic>.from(sensors['fire'] as Map)
             : {};
@@ -58,7 +296,6 @@ class HomeDashboard extends StatelessWidget {
         final motion = sensors['motion'] is Map
             ? Map<String, dynamic>.from(sensors['motion'] as Map)
             : {};
-
         final fireWarning = fire['status']?.toString() == 'warning';
         final gasLeak = gas['status']?.toString() == 'leak';
         final tempValue = (temp['value'] ?? 24.5).toDouble();
@@ -83,6 +320,11 @@ class HomeDashboard extends StatelessWidget {
               ],
             ),
             actions: [
+              // 🔽 زر فتح شيت اختيار الثيم
+              IconButton(
+                icon: Icon(Icons.palette_outlined, color: primaryColor),
+                onPressed: _showThemeBottomSheet,
+              ),
               Stack(
                 children: [
                   IconButton(
