@@ -3,7 +3,7 @@ import 'package:firebase_database/firebase_database.dart';
 import '../../core/user_session.dart';
 import '../../widgets/painters/starfield_painter.dart';
 import '../../widgets/painters/glow_logo.dart';
-import '../home/main_screen.dart'; // <-- تعديل: بدل theme_selection_screen
+import '../home/main_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   final Function(ThemeMode, Color) onThemeChanged;
@@ -88,7 +88,6 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _navigateToThemes() {
-    // تعديل: نروح على MainScreen مباشرة بدل ThemeSelectionScreen
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
@@ -132,7 +131,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   Text(
                     'AI SAFETY MONITORING SYSTEM',
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.45),
+                      color: Colors.white.withValues(alpha: 0.45), // [FIX]
                       fontSize: 10.5,
                       letterSpacing: 3.5,
                       fontWeight: FontWeight.w500,
@@ -153,7 +152,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w400,
-                      color: Colors.white.withOpacity(0.55),
+                      color: Colors.white.withValues(alpha: 0.55), // [FIX]
                     ),
                   ),
                   const SizedBox(height: 40),
@@ -204,7 +203,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           alignment: Alignment.centerRight,
                           child: TextButton(
                             onPressed: () {},
-                            child: Text(
+                            child: const Text(
+                              // [FIX] added const
                               'Forgot Password?',
                               style: TextStyle(
                                 color: _primaryCyan,
@@ -225,7 +225,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                 borderRadius: BorderRadius.circular(16),
                               ),
                               elevation: 5,
-                              shadowColor: _primaryBlue.withOpacity(0.5),
+                              shadowColor: _primaryBlue.withValues(
+                                alpha: 0.5,
+                              ), // [FIX]
                             ),
                             onPressed: _isLoading ? null : _handleLogin,
                             child: _isLoading
@@ -253,14 +255,15 @@ class _LoginScreenState extends State<LoginScreen> {
                       Text(
                         "Don’t have an account?",
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.55),
+                          color: Colors.white.withValues(alpha: 0.55), // [FIX]
                           fontSize: 16,
                         ),
                       ),
                       const SizedBox(width: 6),
                       GestureDetector(
                         onTap: () {},
-                        child: Text(
+                        child: const Text(
+                          // [FIX] added const
                           "Sign Up",
                           style: TextStyle(
                             color: _primaryCyan,
@@ -284,20 +287,23 @@ class _LoginScreenState extends State<LoginScreen> {
   InputDecoration _inputDecoration(String hint, IconData icon) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
+      hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.4)), // [FIX]
       prefixIcon: Icon(icon, color: _textGrey),
       filled: true,
-      fillColor: _inputBg.withOpacity(0.8),
+      fillColor: _inputBg.withValues(alpha: 0.8), // [FIX]
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
         borderSide: BorderSide(
-          color: _primaryCyan.withOpacity(0.3),
+          color: _primaryCyan.withValues(alpha: 0.3), // [FIX]
           width: 0.8,
         ),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: _primaryCyan, width: 1.5),
+        borderSide: const BorderSide(
+          color: _primaryCyan,
+          width: 1.5,
+        ), // [FIX] added const
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),

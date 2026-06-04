@@ -8,12 +8,13 @@ class DevicesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = Theme.of(context).colorScheme.primary;
     final textColor = isDark ? Colors.white : Colors.black87;
     final subTextColor = isDark ? Colors.white70 : Colors.black54;
     final cardColor = isDark
         ? const Color(0xFF1E1E2E)
-        : Colors.white.withOpacity(0.95);
+        : Colors.white.withValues(
+            alpha: 0.95,
+          ); // [FIX] withOpacity -> withValues
 
     return SafeArea(
       child: StreamBuilder<DatabaseEvent>(
@@ -27,7 +28,6 @@ class DevicesScreen extends StatelessWidget {
           if (!snap.hasData || snap.data!.snapshot.value == null) {
             return _hardcodedFallback(
               isDark,
-              primaryColor,
               textColor,
               subTextColor,
               cardColor,
@@ -70,7 +70,6 @@ class DevicesScreen extends StatelessWidget {
 
   Widget _hardcodedFallback(
     bool isDark,
-    Color primaryColor,
     Color textColor,
     Color subTextColor,
     Color cardColor,
@@ -143,12 +142,12 @@ class DevicesScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: cardColor,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)), // [FIX]
         boxShadow: isDark
             ? []
             : [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05), // [FIX]
                   blurRadius: 8,
                   offset: const Offset(0, 3),
                 ),
@@ -159,7 +158,7 @@ class DevicesScreen extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1), // [FIX]
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: color, size: 26),
