@@ -10,7 +10,7 @@
 # Environments
 aura_env/
 aura_env2/
-alerts/
+
 # Flutter / Dart
 .dart_tool/
 .idea/
