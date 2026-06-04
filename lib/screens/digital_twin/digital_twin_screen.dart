@@ -35,7 +35,7 @@ class _DigitalTwinScreenState extends State<DigitalTwinScreen>
       col: Colors.indigo,
       // الرابط الجديد للملف المضغوط (6.6MB)
       modelPath:
-          'https://github.com/yomnadahab770/aura_3d_assets/raw/refs/heads/main/badroom.glb',
+          'https://raw.githubusercontent.com/yomnadahab770/aura_3d_assets/main/badroom.glb',
     ),
     _Room3D(
       id: 'bedroom2',
@@ -49,7 +49,7 @@ class _DigitalTwinScreenState extends State<DigitalTwinScreen>
       col: Colors.teal,
       // تأكدي أن بسنت ضغطت هذا الملف أيضاً وارفعيه بنفس الطريقة
       modelPath:
-          'https://github.com/yomnadahab770/aura_3d_assets/raw/refs/heads/main/badroom2.glb',
+          'https://raw.githubusercontent.com/yomnadahab770/aura_3d_assets/main/badroom2.glb',
     ),
   ];
 
