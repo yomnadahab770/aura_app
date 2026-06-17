@@ -49,7 +49,7 @@ class _DigitalTwinScreenState extends State<DigitalTwinScreen>
       col: Colors.teal,
       // تأكدي أن بسنت ضغطت هذا الملف أيضاً وارفعيه بنفس الطريقة
       modelPath:
-          'https://raw.githubusercontent.com/yomnadahab770/aura_3d_assets/main/badroom2.glb',
+          'https://raw.githubusercontent.com/yomnadahab770/aura_3d_assets/main/badroom1.glb',
     ),
   ];
 

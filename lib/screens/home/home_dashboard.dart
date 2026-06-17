@@ -11,8 +11,6 @@ class HomeDashboard extends StatefulWidget {
 }
 
 class _HomeDashboardState extends State<HomeDashboard> {
-  // تم حذف _triggerEmergency لأنها غير مستخدمة لتصفير الـ Warning
-
   void _showThemeBottomSheet() {
     showModalBottomSheet(
       context: context,
@@ -33,7 +31,6 @@ class _HomeDashboardState extends State<HomeDashboard> {
           builder: (context, setSheetState) {
             final isDark = tempMode == 'Dark';
             const List<Color> colors = [
-              // إضافة const هنا
               Color(0xFF00D4FF),
               Color(0xFF6E07F0),
               Color(0xFFFF2D55),
@@ -135,9 +132,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
                             boxShadow: tempColor == c
                                 ? [
                                     BoxShadow(
-                                      color: c.withValues(
-                                        alpha: 0.6,
-                                      ), // [FIX] withOpacity -> withValues
+                                      color: c.withValues(alpha: 0.6),
                                       blurRadius: 14,
                                       spreadRadius: 2,
                                     ),
@@ -209,7 +204,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
           padding: const EdgeInsets.symmetric(vertical: 20),
           decoration: BoxDecoration(
             color: selected
-                ? selectedColor.withValues(alpha: 0.15) // [FIX]
+                ? selectedColor.withValues(alpha: 0.15)
                 : (isDark ? const Color(0xFF1F1F1F) : Colors.white),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
@@ -249,39 +244,54 @@ class _HomeDashboardState extends State<HomeDashboard> {
     final subTextColor = isDark ? Colors.white70 : Colors.black54;
     final cardColor = isDark
         ? const Color(0xFF1E1E2E)
-        : Colors.white.withValues(alpha: 0.95); // [FIX]
+        : Colors.white.withValues(alpha: 0.95);
 
     return SafeArea(
       child: StreamBuilder<DatabaseEvent>(
-        stream: FirebaseDatabase.instance.ref('aura/sensors').onValue,
+        stream: FirebaseDatabase.instance.ref('aura').onValue,
         builder: (context, snap) {
           if (snap.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
-          Map<String, dynamic> sensors = {};
-          if (snap.hasData && snap.data!.snapshot.value != null) {
-            sensors = Map<String, dynamic>.from(
-              snap.data!.snapshot.value as Map,
-            );
-          }
-          final fire = sensors['fire'] is Map
-              ? Map<String, dynamic>.from(sensors['fire'] as Map)
-              : {};
-          final gas = sensors['gas'] is Map
-              ? Map<String, dynamic>.from(sensors['gas'] as Map)
-              : {};
-          final motion = sensors['motion'] is Map
-              ? Map<String, dynamic>.from(sensors['motion'] as Map)
-              : {};
 
-          final fireWarning = fire['status']?.toString() == 'warning';
-          final gasLeak = gas['status']?.toString() == 'leak';
-          final motionDetected = motion['detected'] == true;
-          final anyAlert = fireWarning || gasLeak || motionDetected;
-          final alertCount =
-              (fireWarning ? 1 : 0) +
-              (gasLeak ? 1 : 0) +
-              (motionDetected ? 1 : 0);
+          Map<dynamic, dynamic> auraData = {};
+          if (snap.hasData && snap.data!.snapshot.value != null) {
+            auraData = snap.data!.snapshot.value as Map<dynamic, dynamic>;
+          }
+
+          final sensors = auraData['sensors'] as Map<dynamic, dynamic>? ?? {};
+          final fire = sensors['fire'] as Map<dynamic, dynamic>? ?? {};
+          final fireWarning =
+              fire['status']?.toString().toLowerCase() == 'warning';
+
+          final alerts = auraData['alerts'] as Map<dynamic, dynamic>? ?? {};
+
+          int fallAlertsCount = 0;
+          int childAlertsCount = 0;
+          String latestFallTime = '';
+          String latestChildTime = '';
+
+          alerts.forEach((key, value) {
+            if (value is Map) {
+              final type = value['type']?.toString() ?? '';
+              final time = value['timestamp']?.toString() ?? '';
+
+              if (type == 'PAIN_DETECTED' || type == 'CHEST_CLUTCH') {
+                fallAlertsCount++;
+                latestFallTime = time;
+              } else if (type == 'DISTRACT_CHILD') {
+                childAlertsCount++;
+                latestChildTime = time;
+              }
+            }
+          });
+
+          final fallDanger = fallAlertsCount > 0;
+          final childDanger = childAlertsCount > 0;
+
+          final anyAlert = fireWarning || fallDanger || childDanger;
+          final totalAlerts =
+              (fireWarning ? 1 : 0) + fallAlertsCount + childAlertsCount;
 
           return Column(
             children: [
@@ -303,9 +313,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
                         shadows: isDark
                             ? [
                                 Shadow(
-                                  color: Colors.cyan.withValues(
-                                    alpha: 0.8,
-                                  ), // [FIX]
+                                  color: Colors.cyan.withValues(alpha: 0.8),
                                   blurRadius: 15,
                                   offset: const Offset(0, 0),
                                 ),
@@ -350,8 +358,16 @@ class _HomeDashboardState extends State<HomeDashboard> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'All systems are monitoring',
-                        style: TextStyle(fontSize: 14, color: subTextColor),
+                        anyAlert
+                            ? 'Emergency alerts active!'
+                            : 'All systems are monitoring',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: anyAlert ? Colors.red : subTextColor,
+                          fontWeight: anyAlert
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                        ),
                       ),
                       const SizedBox(height: 24),
                       GridView.count(
@@ -364,23 +380,25 @@ class _HomeDashboardState extends State<HomeDashboard> {
                         children: [
                           _statusCard(
                             title: 'Fall Detection',
-                            status: motionDetected ? 'Alert' : 'Active',
-                            subtitle: motionDetected
-                                ? 'Motion detected'
+                            status: fallDanger ? 'Alert!' : 'Active',
+                            subtitle: fallDanger
+                                ? 'Risk at $latestFallTime'
                                 : 'No issues',
                             icon: Icons.person,
-                            color: motionDetected ? Colors.red : Colors.green,
+                            color: fallDanger ? Colors.red : Colors.green,
                           ),
                           _statusCard(
                             title: 'Child Safety',
-                            status: 'Monitoring',
-                            subtitle: 'No issues',
+                            status: childDanger ? 'Warning!' : 'Monitoring',
+                            subtitle: childDanger
+                                ? 'Risk at $latestChildTime'
+                                : 'No issues',
                             icon: Icons.child_care,
-                            color: Colors.blue,
+                            color: childDanger ? Colors.red : Colors.blue,
                           ),
                           _statusCard(
                             title: 'Fire Detection',
-                            status: fireWarning ? 'Warning' : 'Safe',
+                            status: fireWarning ? 'Danger!' : 'Safe',
                             subtitle: fireWarning
                                 ? 'Fire detected!'
                                 : 'No fire detected',
@@ -405,7 +423,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
                             color: primaryColor.withValues(alpha: 0.3),
-                          ), // [FIX]
+                          ),
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -423,9 +441,12 @@ class _HomeDashboardState extends State<HomeDashboard> {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  anyAlert ? 'Issues Detected' : 'All Good',
+                                  anyAlert
+                                      ? 'Emergency: Action Required'
+                                      : 'All Good',
                                   style: TextStyle(
                                     color: anyAlert ? Colors.red : Colors.green,
+                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
                               ],
@@ -437,7 +458,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
                                 shape: BoxShape.circle,
                               ),
                               child: Text(
-                                alertCount.toString(),
+                                totalAlerts.toString(),
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
@@ -470,7 +491,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cardColor = isDark
         ? const Color(0xFF1E1E2E)
-        : Colors.white.withValues(alpha: 0.95); // [FIX]
+        : Colors.white.withValues(alpha: 0.95);
     final titleColor = isDark ? Colors.white70 : Colors.black54;
     final subColor = isDark ? Colors.white38 : Colors.black38;
 
@@ -481,7 +502,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
         decoration: BoxDecoration(
           color: cardColor,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: color.withValues(alpha: 0.3)), // [FIX]
+          border: Border.all(color: color.withValues(alpha: 0.3)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

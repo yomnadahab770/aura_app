@@ -198,10 +198,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       color: isDark ? Colors.white : Colors.black87,
                     ),
                   ),
-                  IconButton(
-                    icon: Icon(Icons.person_add_outlined, color: primaryColor),
-                    onPressed: () => _showAddMemberDialog(ctx),
-                  ),
+                  if (UserSession.role == 'Admin')
+                    IconButton(
+                      icon: Icon(
+                        Icons.person_add_outlined,
+                        color: primaryColor,
+                      ),
+                      onPressed: () => _showAddMemberDialog(ctx),
+                    ),
                 ],
               ),
               const SizedBox(height: 8),
@@ -313,7 +317,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   ),
                                 ),
                               ),
-                              if (!isCurrentUser) ...[
+                              if (!isCurrentUser &&
+                                  UserSession.role == 'Admin') ...[
                                 const SizedBox(width: 6),
                                 PopupMenuButton<String>(
                                   icon: const Icon(

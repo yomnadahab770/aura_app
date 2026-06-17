@@ -65,7 +65,7 @@ class _MainScreenState extends State<MainScreen> {
         // الـ Scaffold شفاف حتى تظهر النجوم من خلفه
         Scaffold(
           backgroundColor: Colors.transparent,
-          body: _screens[safeIndex],
+          body: IndexedStack(index: safeIndex, children: _screens),
           bottomNavigationBar: ClipRRect(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
             child: BottomNavigationBar(

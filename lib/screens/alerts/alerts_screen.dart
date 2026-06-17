@@ -188,7 +188,28 @@ class _AlertsScreenState extends State<AlertsScreen> {
                 if (alerts.isNotEmpty)
                   IconButton(
                     icon: Icon(Icons.delete_outline, color: subTextColor),
-                    onPressed: () => setState(() => alerts.clear()),
+                    onPressed: () async {
+                      // 1. مسح التنبيهات من الفايربيز من جذورها
+                      await FirebaseDatabase.instance
+                          .ref('aura/alerts')
+                          .remove();
+
+                      // 2. مسح التنبيهات من واجهة الشاشة محلياً في نفس اللحظة
+                      setState(() => alerts.clear());
+
+                      // 3. إظهار رسالة تأكيد خضراء بنجاح العملية
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'All alerts have been successfully cleared!',
+                            ),
+                            backgroundColor: Colors.green,
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
+                      }
+                    },
                     tooltip: 'Clear all',
                   ),
               ],
